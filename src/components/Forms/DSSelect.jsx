@@ -15,6 +15,7 @@ const DSSelect = ({
   disabled = false,
   isLoading = false,
   isError = false,
+  placeholder,
 }) => {
   const {
     control,
@@ -44,14 +45,14 @@ const DSSelect = ({
             "& .MuiOutlinedInput-root": {
               fontSize: "0.95rem",
               fontWeight: 500,
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(8px)',
-              borderRadius: '12px',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              backgroundColor: "rgba(255, 255, 255, 0.8)",
+              backdropFilter: "blur(8px)",
+              borderRadius: "12px",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: "rgba(148, 163, 184, 0.3)",
                 borderWidth: "1px",
-                borderRadius: '12px',
+                borderRadius: "12px",
               },
               "&:hover .MuiOutlinedInput-notchedOutline": {
                 borderColor: "#8b5cf6",
@@ -77,11 +78,11 @@ const DSSelect = ({
               marginLeft: 0,
               marginTop: 1,
             },
-            '& .MuiSelect-select': {
-              fontSize: '0.95rem',
+            "& .MuiSelect-select": {
+              fontSize: "0.95rem",
               fontWeight: 500,
-              color: '#475569',
-              transition: 'color 0.2s ease',
+              color: "#475569",
+              transition: "color 0.2s ease",
               py: 2,
             },
           }}
@@ -89,6 +90,7 @@ const DSSelect = ({
           select
           label={label}
           disabled={disabled || isLoading}
+          placeholder={placeholder}
           size={size}
           value={field.value || ""}
           helperText={fieldError?.message}
@@ -102,10 +104,11 @@ const DSSelect = ({
             field.onBlur();
             // Also trigger validation on blur
             await trigger(name);
-          }}>
+          }}
+        >
           <MenuItem value="">{/* <em>{label}</em> */}</MenuItem>
           {options.map((option) => (
-            <MenuItem key={option.id}  value={option.id}>
+            <MenuItem key={option.id} value={option.id}>
               {option.name || option}
             </MenuItem>
           ))}

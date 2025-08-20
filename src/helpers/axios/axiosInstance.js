@@ -56,7 +56,7 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 500 && !config._retry) {
       config._retry = true;
       try {
-        const response = await getNewAccessToken();
+        const response = await getNewAccessToken2();
         const accessToken = response?.data?.accessToken;
         saveToLocalStorage(authKey, accessToken);
         setAccessToken(accessToken);
@@ -64,6 +64,7 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(config); // Retry the original request
       } catch (refreshError) {
         // Handle refresh failure (logout, redirect, etc.)
+        console.log(refreshError);
         return Promise.reject(refreshError);
       }
     } else {

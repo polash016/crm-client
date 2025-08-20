@@ -46,6 +46,15 @@ const leadsApi = baseApi.injectEndpoints({
       invalidatesTags: ["leads"],
     }),
 
+    bulkDeleteLeads: build.mutation({
+      query: (ids) => ({
+        url: "/leads/bulk",
+        method: "DELETE",
+        data: { ids },
+      }),
+      invalidatesTags: ["leads"],
+    }),
+
     assignOrder: build.mutation({
       query: ({ orderId, assignedToUserId, adminUserId }) => ({
         url: `/orders/${orderId}/assign`,
@@ -88,4 +97,5 @@ export const {
   useAssignOrderMutation,
   useAssignLeadMutation,
   useBulkAssignLeadsMutation,
+  useBulkDeleteLeadsMutation,
 } = leadsApi;

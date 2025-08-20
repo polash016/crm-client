@@ -22,9 +22,12 @@ import {
   FilterList as FilterIcon,
   Clear as ClearIcon,
   Add as AddIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
-import { useGetLeadsQuery } from "@/redux/api/leadsApi";
-import { useGetAllUsersQuery } from "@/redux/api/userApi";
+import {
+  useBulkDeleteLeadsMutation,
+  useGetLeadsQuery,
+} from "@/redux/api/leadsApi";
 import {
   useAssignLeadMutation,
   useBulkAssignLeadsMutation,
@@ -37,6 +40,8 @@ import SecurePhone from "@/components/Shared/SecurePhone";
 import CallHistory from "@/components/Shared/CallHistory";
 import AssignmentModal from "./AssignmentModal";
 import NewLeadModal from "./NewLeadModal";
+import LeadDetailsModal from "./LeadDetailsModal";
+import AddFollowUpModal from "./AddFollowUpModal";
 import { toast } from "sonner";
 
 const LeadsTable = () => {
@@ -53,35 +58,20 @@ const LeadsTable = () => {
   const [selectedLeadForAssignment, setSelectedLeadForAssignment] =
     useState(null);
   const [newLeadModalOpen, setNewLeadModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
+  const [addFollowUpModalOpen, setAddFollowUpModalOpen] = useState(false);
+  const [selectedLeadForFollowUp, setSelectedLeadForFollowUp] = useState(null);
 
   // API mutations for assignment
   const [assignLead] = useAssignLeadMutation();
   const [bulkAssignLeads] = useBulkAssignLeadsMutation();
+  const [bulkDeleteLeads] = useBulkDeleteLeadsMutation();
+
+  const query = {};
 
   // Debounced search
-  const debouncedSearchTerm = useDebounced(searchTerm, 500);
-
-  // Load filters from localStorage on component mount
-  useEffect(() => {
-    const savedAssignmentFilter = localStorage.getItem("leadsAssignmentFilter");
-    const savedStatusFilter = localStorage.getItem("leadsStatusFilter");
-
-    if (savedAssignmentFilter) {
-      setAssignmentFilter(savedAssignmentFilter);
-    }
-    if (savedStatusFilter) {
-      setStatusFilter(savedStatusFilter);
-    }
-  }, []);
-
-  // Save filters to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("leadsAssignmentFilter", assignmentFilter);
-  }, [assignmentFilter]);
-
-  useEffect(() => {
-    localStorage.setItem("leadsStatusFilter", statusFilter);
-  }, [statusFilter]);
+  const debouncedTerm = useDebounced({ searchQuery: searchTerm, delay: 500 });
 
   // Keyboard shortcut for ESC key
   useEffect(() => {
@@ -98,10 +88,9 @@ const LeadsTable = () => {
   }, [selectedRows.length]);
 
   // Build query object like ProductTable
-  const query = {};
 
-  if (!!debouncedSearchTerm) {
-    query["searchTerm"] = debouncedSearchTerm;
+  if (!!debouncedTerm) {
+    query["searchTerm"] = searchTerm;
   }
 
   // Add filters to query
@@ -115,8 +104,6 @@ const LeadsTable = () => {
 
   query["page"] = page;
   query["limit"] = limit;
-
-  console.log("query", query);
 
   const {
     data: leadsData,
@@ -159,24 +146,17 @@ const LeadsTable = () => {
   };
 
   // Bulk action handlers
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedRows.length === 0) return;
 
-    const deletePromise = (async () => {
-      // TODO: Implement actual bulk delete API call
-      console.log("Bulk deleting leads:", selectedRows);
-
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Clear selection after successful deletion
-      setSelectedRows([]);
-    })();
-
-    toast.promise(deletePromise, {
-      loading: `Deleting ${selectedRows.length} leads...`,
-      success: `${selectedRows.length} leads deleted successfully!`,
-      error: "Failed to delete leads. Please try again.",
+    const res = bulkDeleteLeads(selectedRows).unwrap();
+    toast.promise(Promise.resolve(res), {
+      loading: "Deleting...",
+      success: (res) => {
+        setSelectedRows([]);
+        return res?.message || "Leads deleted successfully";
+      },
+      error: (error) => error?.message || "Something went wrong",
     });
   };
 
@@ -252,6 +232,28 @@ const LeadsTable = () => {
   const handleCloseCallHistory = () => {
     setCallHistoryOpen(false);
     setSelectedLeadForHistory(null);
+  };
+
+  // Details modal handlers
+  const handleOpenDetailsModal = (lead) => {
+    setSelectedLeadForDetails(lead);
+    setDetailsModalOpen(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setDetailsModalOpen(false);
+    setSelectedLeadForDetails(null);
+  };
+
+  // Add Follow Up modal handlers
+  const handleOpenAddFollowUpModal = (lead) => {
+    setSelectedLeadForFollowUp(lead);
+    setAddFollowUpModalOpen(true);
+  };
+
+  const handleCloseAddFollowUpModal = () => {
+    setAddFollowUpModalOpen(false);
+    setSelectedLeadForFollowUp(null);
   };
 
   const handleNewCallFromHistory = (callData) => {
@@ -489,11 +491,7 @@ const LeadsTable = () => {
         </Box>
       ),
     },
-    {
-      id: "address",
-      label: "Address",
-      render: (row) => `${row?.address?.slice(0, 20)}...` || "-",
-    },
+
     {
       id: "assignedtoId",
       label: "Assigned To",
@@ -556,47 +554,158 @@ const LeadsTable = () => {
       label: "Source",
       render: (row) => row?.source || "-",
     },
-    {
-      id: "status",
-      label: "Status",
-      render: (row) => {
-        const status = row?.status || "new";
-        const getStatusColor = (status) => {
-          switch (status.toLowerCase()) {
-            case "new":
-              return { bg: "#dbeafe", color: "#1e40af", border: "#bfdbfe" };
-            case "contacted":
-              return { bg: "#fef3c7", color: "#92400e", border: "#fde68a" };
-            case "qualified":
-              return { bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
-            case "unqualified":
-              return { bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
-            case "converted":
-              return { bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
-            case "lost":
-              return { bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
-            default:
-              return { bg: "#f3f4f6", color: "#374151", border: "#d1d5db" };
-          }
-        };
+    // {
+    //   id: "status",
+    //   label: "Status",
+    //   render: (row) => {
+    //     const status = row?.status || "new";
+    //     const getStatusColor = (status) => {
+    //       switch (status.toLowerCase()) {
+    //         case "new":
+    //           return { bg: "#dbeafe", color: "#1e40af", border: "#bfdbfe" };
+    //         case "contacted":
+    //           return { bg: "#fef3c7", color: "#92400e", border: "#fde68a" };
+    //         case "qualified":
+    //           return { bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
+    //         case "unqualified":
+    //           return { bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
+    //         case "converted":
+    //           return { bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
+    //         case "lost":
+    //           return { bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
+    //         default:
+    //           return { bg: "#f3f4f6", color: "#374151", border: "#d1d5db" };
+    //       }
+    //     };
 
-        const statusConfig = getStatusColor(status);
+    //     const statusConfig = getStatusColor(status);
+
+    //     return (
+    //       <Chip
+    //         label={status.charAt(0).toUpperCase() + status.slice(1)}
+    //         size="small"
+    //         sx={{
+    //           backgroundColor: statusConfig.bg,
+    //           color: statusConfig.color,
+    //           border: `1px solid ${statusConfig.border}`,
+    //           fontWeight: 600,
+    //           fontSize: "0.75rem",
+    //           height: "24px",
+    //         }}
+    //       />
+    //     );
+    //   },
+    // },
+    {
+      id: "followup",
+      label: "Follow Up",
+      render: (row) => {
+        if (!row?.nextFollowUpAt) {
+          return (
+            <Typography variant="body2" color="text.secondary">
+              No follow up
+            </Typography>
+          );
+        }
+
+        const followUpDate = new Date(row.nextFollowUpAt);
+        const now = new Date();
+        const timeDiff = followUpDate.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+        let daysText = "";
+        let color = "";
+
+        if (daysDiff < 0) {
+          daysText = `${Math.abs(daysDiff)} days overdue`;
+          color = "#dc2626"; // Red for overdue
+        } else if (daysDiff === 0) {
+          daysText = "Today";
+          color = "#ea580c"; // Orange for today
+        } else if (daysDiff === 1) {
+          daysText = "Tomorrow";
+          color = "#ca8a04"; // Yellow for tomorrow
+        } else {
+          daysText = `${daysDiff} days remaining`;
+          color = "#059669"; // Green for future
+        }
 
         return (
-          <Chip
-            label={status.charAt(0).toUpperCase() + status.slice(1)}
-            size="small"
-            sx={{
-              backgroundColor: statusConfig.bg,
-              color: statusConfig.color,
-              border: `1px solid ${statusConfig.border}`,
-              fontWeight: 600,
-              fontSize: "0.75rem",
-              height: "24px",
-            }}
-          />
+          <Box sx={{ textAlign: "center" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                color: color,
+                mb: 0.5,
+              }}
+            >
+              {daysText}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: "0.75rem" }}
+            >
+              {followUpDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </Typography>
+          </Box>
         );
       },
+    },
+    {
+      id: "addFollowUp",
+      label: "Add Follow Up",
+      render: (row) => (
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Tooltip title="Add Follow Up">
+            <IconButton
+              size="small"
+              onClick={() => handleOpenAddFollowUpModal(row)}
+              sx={{
+                background: "rgba(16, 185, 129, 0.1)",
+                color: "#10b981",
+                "&:hover": {
+                  background: "rgba(16, 185, 129, 0.2)",
+                  transform: "scale(1.1)",
+                },
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
+    },
+    {
+      id: "details",
+      label: "Details",
+      render: (row) => (
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Tooltip title="View lead details">
+            <IconButton
+              size="small"
+              onClick={() => handleOpenDetailsModal(row)}
+              sx={{
+                background: "rgba(59, 130, 246, 0.1)",
+                color: "#3b82f6",
+                "&:hover": {
+                  background: "rgba(59, 130, 246, 0.2)",
+                  transform: "scale(1.1)",
+                },
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
     },
   ];
 
@@ -1078,6 +1187,20 @@ const LeadsTable = () => {
 
         {/* New Lead Modal */}
         <NewLeadModal open={newLeadModalOpen} setOpen={setNewLeadModalOpen} />
+
+        {/* Lead Details Modal */}
+        <LeadDetailsModal
+          open={detailsModalOpen}
+          setOpen={setDetailsModalOpen}
+          lead={selectedLeadForDetails}
+        />
+
+        {/* Add Follow Up Modal */}
+        <AddFollowUpModal
+          open={addFollowUpModalOpen}
+          setOpen={setAddFollowUpModalOpen}
+          lead={selectedLeadForFollowUp}
+        />
       </Box>
     </ResponsiveContainer>
   );
