@@ -47,17 +47,6 @@ const ProductTable = () => {
     ...query,
   });
 
-  if (isLoading) {
-    return (
-      <TableSkeleton
-        rowCount={5}
-        showImage={true}
-        showActions={true}
-        headerTitle="Categories"
-      />
-    );
-  }
-
   if (isError)
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">

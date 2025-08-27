@@ -8,8 +8,6 @@ const DSFilesWithPreview = ({ name, label, sx, required, defaultValue }) => {
   const [previews, setPreviews] = useState([]);
   const [files, setFiles] = useState([]);
 
-  console.log(defaultValue);
-
   // Initialize previews with defaultValue if available
   useEffect(() => {
     if (

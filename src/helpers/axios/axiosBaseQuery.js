@@ -12,13 +12,11 @@ const axiosBaseQuery = ({ baseUrl } = { baseUrl: "" }) => {
           "Content-Type": contentType || "application/json",
         },
       });
-      console.log(result);
       return {
         data: result,
       };
     } catch (axiosError) {
       const err = axiosError;
-      console.log(err);
       return {
         error: {
           status: err.response?.status,

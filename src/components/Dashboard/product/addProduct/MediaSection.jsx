@@ -13,7 +13,6 @@ const MediaSection = ({
   multiImageHeight = 140,
   multiImageWidth = 140,
 }) => {
-  console.log(defaultValues);
   return (
     <div>
       <div className="p-6 bg-white rounded-2xl shadow-md max-w-7xl mx-auto space-y-12 mt-4">

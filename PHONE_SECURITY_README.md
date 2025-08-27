@@ -135,7 +135,7 @@ export const phoneConfig = {
 <SecurePhone
   phoneNumber="+1234567890"
   userRole="employee"
-  onCall={(callData) => console.log(callData)}
+  onCall={(callData) => }
 />
 ```
 

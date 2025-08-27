@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AppBar,
   Toolbar,
@@ -10,16 +11,16 @@ import {
   Menu,
   MenuItem,
   Badge,
-  useTheme,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetMyProfileQuery } from "@/redux/api/userApi";
+import { logOut } from "@/services/auth.service";
 
 const DashboardBar = ({ onMenuClick }) => {
-  const theme = useTheme();
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user } = useAuth();
   const { data: profileData } = useGetMyProfileQuery();
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -32,7 +33,7 @@ const DashboardBar = ({ onMenuClick }) => {
   };
 
   const handleLogout = () => {
-    logout();
+    logOut(router);
     handleClose();
   };
 
@@ -54,7 +55,8 @@ const DashboardBar = ({ onMenuClick }) => {
           left: 0,
           right: 0,
           height: "2px",
-          background: "linear-gradient(90deg, #3b82f6 0%, #1d4ed8 50%, #3b82f6 100%)",
+          background:
+            "linear-gradient(90deg, #3b82f6 0%, #1d4ed8 50%, #3b82f6 100%)",
         },
       }}
     >
@@ -89,7 +91,10 @@ const DashboardBar = ({ onMenuClick }) => {
               letterSpacing: "0.5px",
             }}
           >
-            Welcome back, {profileData?.data?.name?.split(" ")[0] || user?.name?.split(" ")[0] || "User"}
+            Welcome back,{" "}
+            {profileData?.data?.name?.split(" ")[0] ||
+              user?.name?.split(" ")[0] ||
+              "User"}
           </Typography>
           <Typography
             variant="body2"
@@ -145,8 +150,9 @@ const DashboardBar = ({ onMenuClick }) => {
                 background: "transparent",
               }}
             >
-              {profileData?.data?.name?.charAt(0)?.toUpperCase() || 
-               user?.name?.charAt(0)?.toUpperCase() || "U"}
+              {profileData?.data?.name?.charAt(0)?.toUpperCase() ||
+                user?.name?.charAt(0)?.toUpperCase() ||
+                "U"}
             </Avatar>
           </IconButton>
         </Box>
@@ -207,7 +213,10 @@ const DashboardBar = ({ onMenuClick }) => {
           </Box>
 
           <MenuItem
-            onClick={handleClose}
+            onClick={() => {
+              router.push("/dashboard/profile");
+              handleClose();
+            }}
             sx={{
               py: 1.5,
               px: 2,

@@ -34,8 +34,6 @@ const VariantsModal = ({
     );
   };
 
-  console.log(variants);
-
   return (
     <div>
       <div onClick={() => setOpen(true)}>{children}</div>

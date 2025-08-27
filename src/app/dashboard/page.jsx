@@ -1,140 +1,38 @@
 "use client";
 
 import React from "react";
-import {
-  Box,
-  Grid,
-  Paper,
-  Typography,
-  Card,
-  CardContent,
-  IconButton,
-  Stack,
-  Chip,
-  Avatar,
-  LinearProgress,
-} from "@mui/material";
-import {
-  FiUsers,
-  FiShoppingCart,
-  FiDollarSign,
-  FiTrendingUp,
-  FiTrendingDown,
-  FiActivity,
-  FiCalendar,
-  FiStar,
-} from "react-icons/fi";
+import { Box, Typography, Card, CardContent, Stack, Chip } from "@mui/material";
+import { FiClock, FiCode, FiSettings, FiUsers } from "react-icons/fi";
+import { Rocket } from "@mui/icons-material";
 
 const DashboardPage = () => {
-  // Mock data for demonstration
-  const stats = [
+  const features = [
     {
-      title: "Total Users",
-      value: "2,847",
-      change: "+12.5%",
-      trend: "up",
-      icon: FiUsers,
+      icon: FiCode,
+      title: "Advanced Analytics",
+      description: "Deep insights into your business performance",
       color: "#3b82f6",
-      bgColor: "rgba(59, 130, 246, 0.1)",
     },
     {
-      title: "Total Orders",
-      value: "1,234",
-      change: "+8.2%",
-      trend: "up",
-      icon: FiShoppingCart,
+      icon: FiUsers,
+      title: "Customer Management",
+      description: "Comprehensive customer relationship tools",
       color: "#10b981",
-      bgColor: "rgba(16, 185, 129, 0.1)",
     },
     {
-      title: "Revenue",
-      value: "$45,678",
-      change: "+15.3%",
-      trend: "up",
-      icon: FiDollarSign,
+      icon: FiSettings,
+      title: "Automation",
+      description: "Streamline your business processes",
       color: "#8b5cf6",
-      bgColor: "rgba(139, 92, 246, 0.1)",
     },
     {
-      title: "Conversion Rate",
-      value: "3.24%",
-      change: "-2.1%",
-      trend: "down",
-      icon: FiTrendingUp,
+      icon: Rocket,
+      title: "Performance",
+      description: "Lightning-fast operations and reporting",
       color: "#f59e0b",
-      bgColor: "rgba(245, 158, 11, 0.1)",
     },
   ];
 
-  const recentActivities = [
-    {
-      id: 1,
-      user: "John Doe",
-      action: "placed a new order",
-      target: "Product XYZ",
-      time: "2 minutes ago",
-      avatar: "JD",
-      type: "order",
-    },
-    {
-      id: 2,
-      user: "Jane Smith",
-      action: "updated profile",
-      target: "Personal Information",
-      time: "15 minutes ago",
-      avatar: "JS",
-      type: "profile",
-    },
-    {
-      id: 3,
-      user: "Mike Johnson",
-      action: "created new role",
-      target: "Senior Manager",
-      time: "1 hour ago",
-      avatar: "MJ",
-      type: "role",
-    },
-    {
-      id: 4,
-      user: "Sarah Wilson",
-      action: "completed task",
-      target: "Customer Support",
-      time: "2 hours ago",
-      avatar: "SW",
-      type: "task",
-    },
-  ];
-
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case "order":
-        return <FiShoppingCart size={16} />;
-      case "profile":
-        return <FiUsers size={16} />;
-      case "role":
-        return <FiStar size={16} />;
-      case "task":
-        return <FiActivity size={16} />;
-      default:
-        return <FiActivity size={16} />;
-    }
-  };
-
-  const getActivityColor = (type) => {
-    switch (type) {
-      case "order":
-        return "#10b981";
-      case "profile":
-        return "#3b82f6";
-      case "role":
-        return "#8b5cf6";
-      case "task":
-        return "#f59e0b";
-      default:
-        return "#64748b";
-    }
-  };
- 
   return (
     <Box sx={{ p: 0 }}>
       {/* Welcome Header */}
@@ -154,7 +52,8 @@ const DashboardPage = () => {
             right: 0,
             width: "200px",
             height: "200px",
-            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)",
             borderRadius: "50%",
           },
         }}
@@ -177,389 +76,335 @@ const DashboardPage = () => {
             maxWidth: "600px",
           }}
         >
-          Manage your customers, track orders, and grow your business with our comprehensive CRM solution.
+          Manage your customers, track orders, and grow your business with our
+          comprehensive CRM solution.
         </Typography>
       </Box>
 
-      {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                background: "rgba(255, 255, 255, 0.8)",
-                backdropFilter: "blur(20px)",
-                borderRadius: "20px",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
-                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: "0 16px 48px rgba(0, 0, 0, 0.12)",
-                },
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "16px",
-                    background: stat.bgColor,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mr: 2,
-                  }}
-                >
-                  <stat.icon size={24} color={stat.color} />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontWeight: 700,
-                      color: "#1e293b",
-                      fontSize: "1.75rem",
-                    }}
-                  >
-                    {stat.value}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "#64748b",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    {stat.title}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.5,
-                    color: stat.trend === "up" ? "#10b981" : "#ef4444",
-                  }}
-                >
-                  {stat.trend === "up" ? (
-                    <FiTrendingUp size={16} />
-                  ) : (
-                    <FiTrendingDown size={16} />
-                  )}
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    {stat.change}
-                  </Typography>
-                </Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "#94a3b8",
-                    fontSize: "0.75rem",
-                  }}
-                >
-                  from last month
-                </Typography>
-              </Box>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Main Content Grid */}
-      <Grid container spacing={3}>
-        {/* Recent Activities */}
-        <Grid item xs={12} lg={8}>
-          <Paper
-            elevation={0}
+      {/* Development Ongoing Section */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "70vh",
+          px: 3,
+        }}
+      >
+        <Box sx={{ maxWidth: 800, width: "100%", textAlign: "center" }}>
+          {/* Main Development Card */}
+          <Card
             sx={{
-              p: 3,
-              background: "rgba(255, 255, 255, 0.8)",
+              background: "rgba(255, 255, 255, 0.95)",
               backdropFilter: "blur(20px)",
-              borderRadius: "20px",
               border: "1px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-              height: "fit-content",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.1)",
+              borderRadius: "24px",
+              overflow: "hidden",
+              position: "relative",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "4px",
+                background:
+                  "linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%)",
+              },
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+            <CardContent sx={{ p: 6 }}>
+              {/* Animated Icon */}
               <Box
                 sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "12px",
-                  background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+                  width: 120,
+                  height: 120,
+                  borderRadius: "50%",
+                  background:
+                    "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "white",
-                  mr: 2,
+                  margin: "0 auto 3rem",
+                  position: "relative",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    width: "140%",
+                    height: "140%",
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+                    opacity: 0.2,
+                    animation: "pulse 2s infinite",
+                  },
                 }}
               >
-                <FiActivity size={20} />
+                <FiCode size={50} color="white" />
               </Box>
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    color: "#1e293b",
-                    fontSize: "1.125rem",
-                  }}
-                >
-                  Recent Activities
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: "#64748b",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  Latest updates from your team
-                </Typography>
-              </Box>
-            </Box>
 
-            <Stack spacing={2}>
-              {recentActivities.map((activity) => (
-                <Box
-                  key={activity.id}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    p: 2,
-                    borderRadius: "12px",
-                    background: "rgba(255, 255, 255, 0.5)",
-                    border: "1px solid rgba(255, 255, 255, 0.3)",
-                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": {
-                      background: "rgba(255, 255, 255, 0.7)",
-                      transform: "translateX(4px)",
-                    },
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      mr: 2,
-                      background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-                      color: "white",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {activity.avatar}
-                  </Avatar>
-                  
-                  <Box sx={{ flex: 1 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: 500,
-                        color: "#1e293b",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      <strong>{activity.user}</strong> {activity.action}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "#64748b",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {activity.target} • {activity.time}
-                    </Typography>
-                  </Box>
+              {/* Main Title */}
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 700,
+                  color: "#1e293b",
+                  mb: 2,
+                  letterSpacing: "-0.02em",
+                  fontSize: { xs: "2rem", md: "2.5rem" },
+                }}
+              >
+                🚀 Development Ongoing
+              </Typography>
 
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "8px",
-                      background: `${getActivityColor(activity.type)}20`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: getActivityColor(activity.type),
-                    }}
-                  >
-                    {getActivityIcon(activity.type)}
-                  </Box>
-                </Box>
-              ))}
-            </Stack>
-          </Paper>
-        </Grid>
-
-        {/* Quick Actions & Progress */}
-        <Grid item xs={12} lg={4}>
-          <Stack spacing={3}>
-            {/* Quick Actions */}
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                background: "rgba(255, 255, 255, 0.8)",
-                backdropFilter: "blur(20px)",
-                borderRadius: "20px",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
-                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-              }}
-            >
               <Typography
                 variant="h6"
                 sx={{
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  mb: 2,
+                  color: "#64748b",
+                  mb: 4,
+                  fontWeight: 400,
                   fontSize: "1.125rem",
+                  maxWidth: "600px",
+                  mx: "auto",
+                  lineHeight: 1.6,
                 }}
               >
-                Quick Actions
+                We're working hard to bring you an amazing CRM experience.
+                Exciting new features are on the way!
               </Typography>
-              
-              <Stack spacing={2}>
-                {[
-                  { label: "Add New User", icon: FiUsers, color: "#3b82f6" },
-                  { label: "Create Role", icon: FiStar, color: "#8b5cf6" },
-                  { label: "New Order", icon: FiShoppingCart, color: "#10b981" },
-                  { label: "Schedule Meeting", icon: FiCalendar, color: "#f59e0b" },
-                ].map((action, index) => (
+
+              {/* Status Badge */}
+              <Box sx={{ mb: 4 }}>
+                <Chip
+                  icon={<FiClock size={16} />}
+                  label="Coming Soon"
+                  sx={{
+                    background:
+                      "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                    color: "white",
+                    fontWeight: 600,
+                    fontSize: "0.875rem",
+                    px: 2,
+                    py: 1,
+                    "& .MuiChip-icon": {
+                      color: "white",
+                    },
+                  }}
+                />
+              </Box>
+
+              {/* Feature Grid */}
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                  gap: 3,
+                  mb: 4,
+                }}
+              >
+                {features.map((feature, index) => (
                   <Box
                     key={index}
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      p: 2,
-                      borderRadius: "12px",
-                      background: "rgba(255, 255, 255, 0.5)",
-                      border: "1px solid rgba(255, 255, 255, 0.3)",
-                      cursor: "pointer",
-                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      p: 3,
+                      background: "rgba(255, 255, 255, 0.8)",
+                      borderRadius: "16px",
+                      border: "1px solid rgba(255, 255, 255, 0.4)",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       "&:hover": {
-                        background: "rgba(255, 255, 255, 0.7)",
-                        transform: "translateX(4px)",
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 12px 24px rgba(0, 0, 0, 0.08)",
+                        background: "rgba(255, 255, 255, 0.9)",
                       },
                     }}
                   >
                     <Box
                       sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "8px",
-                        background: `${action.color}20`,
+                        width: 48,
+                        height: 48,
+                        borderRadius: "12px",
+                        background: `${feature.color}15`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: action.color,
-                        mr: 2,
+                        color: feature.color,
+                        mb: 2,
                       }}
                     >
-                      <action.icon size={18} />
+                      <feature.icon size={24} />
                     </Box>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 600,
+                        color: "#1e293b",
+                        mb: 1,
+                        fontSize: "1rem",
+                      }}
+                    >
+                      {feature.title}
+                    </Typography>
                     <Typography
                       variant="body2"
                       sx={{
-                        fontWeight: 500,
-                        color: "#1e293b",
+                        color: "#64748b",
                         fontSize: "0.875rem",
+                        lineHeight: 1.5,
                       }}
                     >
-                      {action.label}
+                      {feature.description}
                     </Typography>
                   </Box>
                 ))}
-              </Stack>
-            </Paper>
+              </Box>
 
-            {/* Progress Overview */}
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                background: "rgba(255, 255, 255, 0.8)",
-                backdropFilter: "blur(20px)",
-                borderRadius: "20px",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
-                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-              }}
-            >
+              {/* Progress Indicator */}
+              <Box sx={{ mb: 4 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#64748b",
+                    mb: 2,
+                    fontWeight: 500,
+                  }}
+                >
+                  Development Progress
+                </Typography>
+                <Box
+                  sx={{
+                    height: 8,
+                    backgroundColor: "rgba(148, 163, 184, 0.2)",
+                    borderRadius: 4,
+                    overflow: "hidden",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: "75%",
+                      height: "100%",
+                      background:
+                        "linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%)",
+                      borderRadius: 4,
+                      position: "relative",
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background:
+                          "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+                        animation: "shimmer 2s infinite",
+                      },
+                    }}
+                  />
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#64748b",
+                    mt: 1,
+                    display: "block",
+                    fontSize: "0.75rem",
+                  }}
+                >
+                  75% Complete • Expected Launch: Soon
+                </Typography>
+              </Box>
+
+              {/* Footer Message */}
               <Typography
-                variant="h6"
+                variant="body2"
                 sx={{
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  mb: 2,
-                  fontSize: "1.125rem",
+                  color: "#94a3b8",
+                  fontStyle: "italic",
+                  fontSize: "0.875rem",
                 }}
               >
-                Monthly Goals
+                Thank you for your patience! We're building something amazing
+                just for you.
               </Typography>
-              
-              <Stack spacing={3}>
-                {[
-                  { label: "Sales Target", value: 75, color: "#10b981" },
-                  { label: "Customer Acquisition", value: 60, color: "#3b82f6" },
-                  { label: "Team Performance", value: 85, color: "#8b5cf6" },
-                ].map((goal, index) => (
-                  <Box key={index}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 500,
-                          color: "#64748b",
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        {goal.label}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                          color: "#1e293b",
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        {goal.value}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={goal.value}
-                      sx={{
-                        height: 8,
-                        borderRadius: 4,
-                        backgroundColor: "rgba(148, 163, 184, 0.2)",
-                        "& .MuiLinearProgress-bar": {
-                          borderRadius: 4,
-                          background: `linear-gradient(90deg, ${goal.color} 0%, ${goal.color}80 100%)`,
-                        },
-                      }}
-                    />
-                  </Box>
-                ))}
-              </Stack>
-            </Paper>
-          </Stack>
-        </Grid>
-      </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Floating Elements for Visual Appeal */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: "10%",
+              left: "5%",
+              width: 20,
+              height: 20,
+              background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+              borderRadius: "50%",
+              opacity: 0.6,
+              animation: "float 3s ease-in-out infinite",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: "20%",
+              right: "8%",
+              width: 15,
+              height: 15,
+              background: "linear-gradient(135deg, #10b981, #3b82f6)",
+              borderRadius: "50%",
+              opacity: 0.5,
+              animation: "float 4s ease-in-out infinite reverse",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: "15%",
+              left: "10%",
+              width: 25,
+              height: 25,
+              background: "linear-gradient(135deg, #f59e0b, #10b981)",
+              borderRadius: "50%",
+              opacity: 0.4,
+              animation: "float 5s ease-in-out infinite",
+            }}
+          />
+        </Box>
+      </Box>
+
+      {/* Custom CSS Animations */}
+      <style jsx global>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+
+        @keyframes pulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.2;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.3;
+          }
+        }
+      `}</style>
     </Box>
   );
 };

@@ -4,7 +4,7 @@ import { useGetAllDeliveryRatesQuery } from "@/redux/api/deliveryRateApi";
 
 const DeliveryType = ({ defaultValues = {} }) => {
   const { data, isLoading, isError } = useGetAllDeliveryRatesQuery({});
-  console.log(defaultValues);
+
   return (
     <>
       <div className="p-6 bg-white rounded-2xl shadow-md max-w-7xl mx-auto space-y-12 mt-4">

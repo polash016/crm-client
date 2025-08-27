@@ -20,12 +20,12 @@ const groupPermissionsBySection = (options) => {
   // Define custom section names for better display
   const sectionNameMapping = {
     user: "User",
-    users: "User", 
+    users: "User",
     tenant: "Tenant",
     tenants: "Tenant",
     brand: "Brand",
     brands: "Brand",
-    category: "Category", 
+    category: "Category",
     categories: "Category",
     sub_category: "SubCategory",
     sub_categories: "SubCategory",
@@ -36,7 +36,7 @@ const groupPermissionsBySection = (options) => {
     combo_packs: "Combo Pack",
     payment_method: "Payment Method",
     payment_methods: "Payment Method",
-    delivery_rate: "Delivery Rate", 
+    delivery_rate: "Delivery Rate",
     delivery_rates: "Delivery Rate",
     order: "Order",
     orders: "Order",
@@ -45,12 +45,12 @@ const groupPermissionsBySection = (options) => {
     employee: "Employee",
     employees: "Employee",
     landing_page: "Landing Page",
-    landing_pages: "Landing Page", 
+    landing_pages: "Landing Page",
     blog: "Blog",
     blogs: "Blog",
     blog_category: "Blog Category",
     blog_categories: "Blog Category",
-    inventory: "Inventory", 
+    inventory: "Inventory",
     inventories: "Inventory",
     history: "History",
     histories: "History",
@@ -58,8 +58,8 @@ const groupPermissionsBySection = (options) => {
     profiles: "Profile",
     lead: "Lead",
     leads: "Lead",
-    customer: "Customer", 
-    customers: "Customer"
+    customer: "Customer",
+    customers: "Customer",
   };
 
   const groups = {};
@@ -67,17 +67,19 @@ const groupPermissionsBySection = (options) => {
   // Group permissions dynamically based on their names
   options.forEach((option) => {
     const permissionName = option.name;
-    
+
     // Extract the resource name from permission (everything after the first underscore)
-    const parts = permissionName.split('_');
-    let resourceName = '';
-    
+    const parts = permissionName.split("_");
+    let resourceName = "";
+
     // Handle different permission patterns
     if (parts.length >= 2) {
-      if (parts[0] === 'manage') {
-        resourceName = parts.slice(1).join('_');
-      } else if (['view', 'create', 'edit', 'delete', 'update'].includes(parts[0])) {
-        resourceName = parts.slice(1).join('_');
+      if (parts[0] === "manage") {
+        resourceName = parts.slice(1).join("_");
+      } else if (
+        ["view", "create", "edit", "delete", "update"].includes(parts[0])
+      ) {
+        resourceName = parts.slice(1).join("_");
       } else {
         // If it doesn't start with a known action, use the whole thing
         resourceName = permissionName;
@@ -87,11 +89,12 @@ const groupPermissionsBySection = (options) => {
     }
 
     // Get the display name for the section
-    const sectionName = sectionNameMapping[resourceName] || 
-                       resourceName
-                         .split('_')
-                         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                         .join(' ');
+    const sectionName =
+      sectionNameMapping[resourceName] ||
+      resourceName
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
 
     // Initialize the group if it doesn't exist
     if (!groups[sectionName]) {
@@ -104,49 +107,65 @@ const groupPermissionsBySection = (options) => {
 
   // Sort permissions within each group by action priority
   const actionPriority = {
-    'manage': 0,
-    'view': 1, 
-    'create': 2,
-    'edit': 3,
-    'update': 4,
-    'delete': 5
+    manage: 0,
+    view: 1,
+    create: 2,
+    edit: 3,
+    update: 4,
+    delete: 5,
   };
 
-  Object.keys(groups).forEach(sectionName => {
+  Object.keys(groups).forEach((sectionName) => {
     groups[sectionName].sort((a, b) => {
-      const aAction = a.name.split('_')[0];
-      const bAction = b.name.split('_')[0];
-      const aPriority = actionPriority[aAction] !== undefined ? actionPriority[aAction] : 999;
-      const bPriority = actionPriority[bAction] !== undefined ? actionPriority[bAction] : 999;
+      const aAction = a.name.split("_")[0];
+      const bAction = b.name.split("_")[0];
+      const aPriority =
+        actionPriority[aAction] !== undefined ? actionPriority[aAction] : 999;
+      const bPriority =
+        actionPriority[bAction] !== undefined ? actionPriority[bAction] : 999;
       return aPriority - bPriority;
     });
   });
 
   // Define section display order for better UX
   const sectionOrder = [
-    'User', 'Role', 'Employee', 'Profile',
-    'Lead', 'Customer',
-    'Product', 'Combo Pack', 'Category', 'SubCategory', 'Brand', 'Inventory',
-    'Order', 'Payment Method', 'Delivery Rate',
-    'Blog', 'Blog Category', 'Landing Page',
-    'Tenant', 'History'
+    "User",
+    "Role",
+    "Employee",
+    "Profile",
+    "Lead",
+    "Customer",
+    "Product",
+    "Combo Pack",
+    "Category",
+    "SubCategory",
+    "Brand",
+    "Inventory",
+    "Order",
+    "Payment Method",
+    "Delivery Rate",
+    "Blog",
+    "Blog Category",
+    "Landing Page",
+    "Tenant",
+    "History",
   ];
 
   // Sort groups by the defined order, putting unknown sections at the end
   const sortedGroups = {};
-  
+
   // First add sections in the defined order
-  sectionOrder.forEach(sectionName => {
+  sectionOrder.forEach((sectionName) => {
     if (groups[sectionName]) {
       sortedGroups[sectionName] = groups[sectionName];
     }
   });
-  
+
   // Then add any remaining sections alphabetically
   Object.keys(groups)
-    .filter(sectionName => !sectionOrder.includes(sectionName))
+    .filter((sectionName) => !sectionOrder.includes(sectionName))
     .sort()
-    .forEach(sectionName => {
+    .forEach((sectionName) => {
       sortedGroups[sectionName] = groups[sectionName];
     });
 
@@ -181,7 +200,6 @@ const DSRadioInput = ({
           const isIdIncluded = currentValue.some((v) => v.id === id);
 
           if (isIdIncluded) {
-            console.log(currentValue);
             onChange(currentValue.filter((v) => v.id !== id));
           } else {
             // Find the full object from your options that matches the id and add it
@@ -202,51 +220,54 @@ const DSRadioInput = ({
           >
             <Box
               sx={{
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 gap: 2,
                 mb: 3,
                 p: 2,
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
-                borderRadius: '16px',
-                border: '1px solid rgba(139, 92, 246, 0.2)',
+                background:
+                  "linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)",
+                borderRadius: "16px",
+                border: "1px solid rgba(139, 92, 246, 0.2)",
               }}
             >
               <FiShield size={24} color="#8b5cf6" />
               <Typography
                 variant="h6"
                 sx={{
-                  background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
+                  background:
+                    "linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  color: "transparent",
                   fontWeight: 600,
-                  fontSize: '1.1rem',
+                  fontSize: "1.1rem",
                 }}
               >
                 {label}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               {Object.entries(groupedOptions).map(([section, permissions]) => (
                 <Paper
                   key={section}
                   sx={{
-                    background: 'rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(10px)',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                    overflow: 'hidden',
-                    borderTop: '4px solid #10b981',
+                    background: "rgba(255, 255, 255, 0.7)",
+                    backdropFilter: "blur(10px)",
+                    borderRadius: "20px",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+                    overflow: "hidden",
+                    borderTop: "4px solid #10b981",
                   }}
                 >
                   <Box
                     sx={{
-                      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                      background:
+                        "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)",
                       p: 2.5,
-                      display: 'flex',
-                      alignItems: 'center',
+                      display: "flex",
+                      alignItems: "center",
                       gap: 2,
                     }}
                   >
@@ -254,9 +275,9 @@ const DSRadioInput = ({
                     <Typography
                       variant="h6"
                       sx={{
-                        color: '#047857',
+                        color: "#047857",
                         fontWeight: 600,
-                        fontSize: '1rem',
+                        fontSize: "1rem",
                       }}
                     >
                       {section} Permissions
@@ -264,12 +285,13 @@ const DSRadioInput = ({
                     <Typography
                       variant="caption"
                       sx={{
-                        color: 'rgba(4, 120, 87, 0.7)',
-                        fontSize: '0.8rem',
-                        ml: 'auto',
+                        color: "rgba(4, 120, 87, 0.7)",
+                        fontSize: "0.8rem",
+                        ml: "auto",
                       }}
                     >
-                      {permissions.length} permission{permissions.length !== 1 ? 's' : ''}
+                      {permissions.length} permission
+                      {permissions.length !== 1 ? "s" : ""}
                     </Typography>
                   </Box>
                   <Box sx={{ p: 3 }}>
@@ -286,23 +308,23 @@ const DSRadioInput = ({
                                 onChange={() => handleCheck(option.id)}
                                 icon={
                                   <RadioButtonUncheckedIcon
-                                    sx={{ 
+                                    sx={{
                                       color: "#94a3b8",
-                                      fontSize: '1.5rem',
+                                      fontSize: "1.5rem",
                                     }}
                                   />
                                 }
                                 checkedIcon={
-                                  <CheckBoxIcon 
-                                    sx={{ 
+                                  <CheckBoxIcon
+                                    sx={{
                                       color: "#10b981",
-                                      fontSize: '1.5rem',
+                                      fontSize: "1.5rem",
                                     }}
                                   />
                                 }
                                 sx={{
-                                  '&:hover': {
-                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                  "&:hover": {
+                                    backgroundColor: "rgba(16, 185, 129, 0.1)",
                                   },
                                 }}
                               />
@@ -310,19 +332,22 @@ const DSRadioInput = ({
                             label={
                               <Typography
                                 sx={{
-                                  fontSize: '0.9rem',
+                                  fontSize: "0.9rem",
                                   fontWeight: 500,
-                                  color: currentValue.some((v) => v.id === option.id) 
-                                    ? '#047857' 
-                                    : '#475569',
-                                  transition: 'color 0.2s ease',
+                                  color: currentValue.some(
+                                    (v) => v.id === option.id
+                                  )
+                                    ? "#047857"
+                                    : "#475569",
+                                  transition: "color 0.2s ease",
                                 }}
                               >
                                 {option.name
                                   .split("_")
                                   .map(
                                     (word) =>
-                                      word.charAt(0).toUpperCase() + word.slice(1)
+                                      word.charAt(0).toUpperCase() +
+                                      word.slice(1)
                                   )
                                   .join(" ")}
                               </Typography>
@@ -330,10 +355,10 @@ const DSRadioInput = ({
                             sx={{
                               m: 0,
                               p: 1.5,
-                              borderRadius: '12px',
-                              transition: 'all 0.2s ease',
-                              '&:hover': {
-                                backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                              borderRadius: "12px",
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                backgroundColor: "rgba(16, 185, 129, 0.05)",
                               },
                             }}
                           />

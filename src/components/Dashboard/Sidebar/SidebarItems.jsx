@@ -15,14 +15,14 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 
 const SidebarItems = ({ item }) => {
   // Validate item structure
-  if (!item || typeof item !== 'object') {
-    console.warn('SidebarItems: Invalid item received:', item);
+  if (!item || typeof item !== "object") {
     return null;
   }
 
   const pathName = usePathname();
   const linkPath = `/${item.path}`;
-  const hasChildren = item.child && Array.isArray(item.child) && item.child.length > 0;
+  const hasChildren =
+    item.child && Array.isArray(item.child) && item.child.length > 0;
 
   const isActive = !hasChildren && pathName === linkPath;
   const isParentActive =
@@ -39,10 +39,11 @@ const SidebarItems = ({ item }) => {
   };
 
   // Safely get title - ensure it's a string
-  const itemTitle = typeof item.title === 'string' ? item.title : 'Menu Item';
-  
+  const itemTitle = typeof item.title === "string" ? item.title : "Menu Item";
+
   // Safely get icon - ensure it's a valid component
-  const ItemIcon = item.icon && typeof item.icon === 'function' ? item.icon : null;
+  const ItemIcon =
+    item.icon && typeof item.icon === "function" ? item.icon : null;
 
   return (
     <>
@@ -57,30 +58,35 @@ const SidebarItems = ({ item }) => {
             my: 0.5,
             minHeight: 48,
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            background: isActive || isParentActive
-              ? "linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)"
-              : "transparent",
-            color: isActive || isParentActive 
-              ? "#ffffff" 
-              : "rgba(255, 255, 255, 0.85)",
+            background:
+              isActive || isParentActive
+                ? "linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)"
+                : "transparent",
+            color:
+              isActive || isParentActive
+                ? "#ffffff"
+                : "rgba(255, 255, 255, 0.85)",
             fontWeight: isActive || isParentActive ? 600 : 500,
-            borderLeft: isActive || isParentActive
-              ? "3px solid #ffffff"
-              : "3px solid transparent",
+            borderLeft:
+              isActive || isParentActive
+                ? "3px solid #ffffff"
+                : "3px solid transparent",
             "& svg": {
-              color: isActive || isParentActive 
-                ? "#ffffff" 
-                : "rgba(255, 255, 255, 0.7)",
+              color:
+                isActive || isParentActive
+                  ? "#ffffff"
+                  : "rgba(255, 255, 255, 0.7)",
               transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             },
             "&:hover": {
-              background: isActive || isParentActive
-                ? "linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%)"
-                : "rgba(139, 92, 246, 0.15)",
+              background:
+                isActive || isParentActive
+                  ? "linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%)"
+                  : "rgba(139, 92, 246, 0.15)",
               color: "#ffffff",
               transform: "translateX(4px)",
               borderLeft: "3px solid #8b5cf6",
-              "& svg": { 
+              "& svg": {
                 color: "#ffffff",
                 transform: "scale(1.1)",
               },
@@ -93,8 +99,8 @@ const SidebarItems = ({ item }) => {
             zIndex: 2,
           }}
         >
-          <ListItemIcon 
-            sx={{ 
+          <ListItemIcon
+            sx={{
               minWidth: 36,
               display: "flex",
               alignItems: "center",
@@ -124,7 +130,11 @@ const SidebarItems = ({ item }) => {
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              {open ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+              {open ? (
+                <ExpandLess fontSize="small" />
+              ) : (
+                <ExpandMore fontSize="small" />
+              )}
             </Box>
           )}
         </ListItemButton>
@@ -135,8 +145,7 @@ const SidebarItems = ({ item }) => {
           <List component="div" disablePadding sx={{ ml: 2 }}>
             {item.child.map((child, childIndex) => {
               // Validate child structure
-              if (!child || typeof child !== 'object') {
-                console.warn(`SidebarItems: Invalid child at index ${childIndex}:`, child);
+              if (!child || typeof child !== "object") {
                 return null;
               }
 
@@ -144,8 +153,12 @@ const SidebarItems = ({ item }) => {
               const childActive = pathName === childPath;
 
               // Safely get child title and icon
-              const childTitle = typeof child.title === 'string' ? child.title : 'Sub Menu';
-              const ChildIcon = child.icon && typeof child.icon === 'function' ? child.icon : null;
+              const childTitle =
+                typeof child.title === "string" ? child.title : "Sub Menu";
+              const ChildIcon =
+                child.icon && typeof child.icon === "function"
+                  ? child.icon
+                  : null;
 
               return (
                 <ListItem key={`${childTitle}-${childIndex}`} disablePadding>
@@ -161,8 +174,8 @@ const SidebarItems = ({ item }) => {
                       background: childActive
                         ? "linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)"
                         : "transparent",
-                      color: childActive 
-                        ? "#ffffff" 
+                      color: childActive
+                        ? "#ffffff"
                         : "rgba(255, 255, 255, 0.8)",
                       fontWeight: childActive ? 600 : 500,
                       borderLeft: childActive
@@ -170,8 +183,8 @@ const SidebarItems = ({ item }) => {
                         : "2px solid transparent",
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       "& svg": {
-                        color: childActive 
-                          ? "#ffffff" 
+                        color: childActive
+                          ? "#ffffff"
                           : "rgba(255, 255, 255, 0.6)",
                         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       },
@@ -182,7 +195,7 @@ const SidebarItems = ({ item }) => {
                         color: "#ffffff",
                         transform: "translateX(4px)",
                         borderLeft: "2px solid #8b5cf6",
-                        "& svg": { 
+                        "& svg": {
                           color: "#ffffff",
                           transform: "scale(1.1)",
                         },
@@ -192,8 +205,8 @@ const SidebarItems = ({ item }) => {
                       },
                     }}
                   >
-                    <ListItemIcon 
-                      sx={{ 
+                    <ListItemIcon
+                      sx={{
                         minWidth: 32,
                         display: "flex",
                         alignItems: "center",

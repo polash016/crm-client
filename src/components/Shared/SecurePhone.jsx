@@ -23,6 +23,9 @@ import {
   Security as SecurityIcon,
 } from "@mui/icons-material";
 import { phoneConfig, hasPermission } from "@/config/phoneConfig";
+import { usePhoneVisibility } from "@/contexts/PhoneVisibilityContext";
+import { useCreateCallLogMutation } from "@/redux/api/callLogApi";
+import { toast } from "sonner";
 
 const SecurePhone = ({
   phoneNumber,
@@ -32,11 +35,18 @@ const SecurePhone = ({
   onCall,
   requireConfirmation = true,
   userRole = "employee", // For role-based access control
+  phoneId, // Unique identifier for this phone number
+  row,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [createCallLog, { isLoading: isCreatingCallLog }] =
+    useCreateCallLogMutation();
+  const { isPhoneVisible, showPhone, hidePhone } = usePhoneVisibility();
   const [showCallDialog, setShowCallDialog] = useState(false);
   const [callReason, setCallReason] = useState("");
   const [isCalling, setIsCalling] = useState(false);
+
+  // Use the global visibility state instead of local state
+  const isVisible = isPhoneVisible(phoneId);
 
   // Check if user has permission to view phone numbers
   const canViewPhone = hasPermission(userRole, "canViewPhone");
@@ -122,7 +132,11 @@ const SecurePhone = ({
 
   const handleToggleVisibility = () => {
     if (canViewPhone) {
-      setIsVisible(!isVisible);
+      if (isVisible) {
+        hidePhone();
+      } else {
+        showPhone(phoneId);
+      }
     }
   };
 
@@ -135,6 +149,26 @@ const SecurePhone = ({
       setShowCallDialog(true);
     } else {
       initiateCall();
+    }
+  };
+
+  const handleCopyNumber = async () => {
+    try {
+      const raw = phoneNumber?.toString() || "";
+      await navigator.clipboard.writeText(raw);
+      toast.success("Phone number copied to clipboard");
+    } catch (e) {
+      try {
+        const el = document.createElement("textarea");
+        el.value = phoneNumber?.toString() || "";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        toast.success("Phone number copied to clipboard");
+      } catch {
+        toast.error("Failed to copy phone number");
+      }
     }
   };
 
@@ -200,7 +234,7 @@ const SecurePhone = ({
               });
             }
           } catch (error) {
-            console.log(`Protocol ${protocol} failed, trying next...`);
+            toast.error(`Protocol ${protocol} failed, trying next...`);
           }
         }
       });
@@ -220,7 +254,6 @@ const SecurePhone = ({
         alert(instructions);
       }
     } catch (error) {
-      console.error("Error initiating call:", error);
       alert(
         "Error initiating call. Please try again or copy the number manually."
       );
@@ -232,7 +265,39 @@ const SecurePhone = ({
   };
 
   const handleCallConfirm = () => {
-    initiateCall();
+    // Validate that call reason is provided and has meaningful content
+    if (!callReason || callReason.trim() === "") {
+      toast.error(
+        "Call reason is required. Please provide a reason before making the call."
+      );
+      return;
+    }
+
+    // Additional validation: ensure call reason has meaningful content (not just spaces)
+    if (callReason.trim().length < 3) {
+      toast.error("Call reason must be at least 3 characters long.");
+      return;
+    }
+
+    const data = {
+      leadId: row?.id,
+      reason: callReason,
+    };
+
+    const res = createCallLog(data).unwrap();
+
+    toast.promise(res, {
+      loading: "Creating...",
+      success: (res) => {
+        if (res.data.id) {
+          initiateCall();
+        }
+        return res?.message || "Call log created successfully";
+      },
+      error: (error) => {
+        return error?.message || "Something went wrong";
+      },
+    });
   };
 
   const handleCallCancel = () => {
@@ -249,35 +314,46 @@ const SecurePhone = ({
     switch (variant) {
       case "chip":
         return (
-          <Chip
-            label={displayNumber}
-            size={size}
-            icon={isVisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
-            onClick={handleToggleVisibility}
-            sx={{
-              cursor: canViewPhone ? "pointer" : "default",
-              backgroundColor: isVisible
-                ? "rgba(239, 68, 68, 0.1)"
-                : "rgba(59, 130, 246, 0.1)",
-              color: isVisible ? "#dc2626" : "#3b82f6",
-              border: `1px solid ${
-                isVisible ? "rgba(239, 68, 68, 0.3)" : "rgba(59, 130, 246, 0.3)"
-              }`,
-              "&:hover": {
+          <Tooltip title="Double click to copy • Click to toggle">
+            <Chip
+              label={displayNumber}
+              size={size}
+              icon={isVisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
+              onClick={handleToggleVisibility}
+              onDoubleClick={handleCopyNumber}
+              sx={{
+                cursor: canViewPhone ? "pointer" : "default",
                 backgroundColor: isVisible
-                  ? "rgba(239, 68, 68, 0.2)"
-                  : "rgba(59, 130, 246, 0.2)",
-              },
-            }}
-          />
+                  ? "rgba(239, 68, 68, 0.1)"
+                  : "rgba(59, 130, 246, 0.1)",
+                color: isVisible ? "#dc2626" : "#3b82f6",
+                border: `1px solid ${
+                  isVisible
+                    ? "rgba(239, 68, 68, 0.3)"
+                    : "rgba(59, 130, 246, 0.3)"
+                }`,
+                "&:hover": {
+                  backgroundColor: isVisible
+                    ? "rgba(239, 68, 68, 0.2)"
+                    : "rgba(59, 130, 246, 0.2)",
+                },
+              }}
+            />
+          </Tooltip>
         );
 
       case "compact":
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
-              {displayNumber}
-            </Typography>
+            <Tooltip title="Click to copy">
+              <Typography
+                variant="body2"
+                onClick={handleCopyNumber}
+                sx={{ fontFamily: "monospace", cursor: "pointer" }}
+              >
+                {displayNumber}
+              </Typography>
+            </Tooltip>
             {canViewPhone && (
               <IconButton
                 size="small"
@@ -296,10 +372,16 @@ const SecurePhone = ({
 
       default:
         return (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
-              {displayNumber}
-            </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Tooltip title="Click to copy">
+              <Typography
+                variant="body2"
+                onClick={handleCopyNumber}
+                sx={{ fontFamily: "monospace", cursor: "pointer" }}
+              >
+                {displayNumber}
+              </Typography>
+            </Tooltip>
             {canViewPhone && (
               <IconButton
                 size="small"
@@ -328,7 +410,7 @@ const SecurePhone = ({
 
   return (
     <>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
         {renderPhoneDisplay()}
 
         {showCallButton && canMakeCalls && (
@@ -385,18 +467,41 @@ const SecurePhone = ({
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Alert severity="info" icon={<SecurityIcon />}>
               You are about to call:{" "}
-              <strong>{formatPhoneNumber(phoneNumber)}</strong>
+              {/* <strong>{formatPhoneNumber(phoneNumber)}</strong> */}
+              {renderPhoneDisplay()}
             </Alert>
 
             <TextField
-              label="Call Reason (Optional)"
+              label="Call Reason *"
               value={callReason}
               onChange={(e) => setCallReason(e.target.value)}
               placeholder="e.g., Follow up, Support, Sales call..."
+              required
               multiline
               rows={2}
               fullWidth
+              // error={
+              //   !callReason ||
+              //   callReason.trim() === "" ||
+              //   (callReason && callReason.trim().length < 3)
+              // }
+              // helperText={
+              //   !callReason || callReason.trim() === ""
+              //     ? "Call reason is required"
+              //     : callReason && callReason.trim().length < 3
+              //     ? "Call reason must be at least 3 characters long"
+              //     : `${callReason ? callReason.trim().length : 0}/3+ characters`
+              // }
             />
+
+            {/* <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: -1 }}
+            >
+              * Required field - Call reason helps track call purpose and
+              compliance
+            </Typography> */}
 
             <Alert severity="warning">
               This call will be logged for compliance and quality purposes.
@@ -412,7 +517,6 @@ const SecurePhone = ({
             variant="contained"
             color="success"
             startIcon={<CallIcon />}
-            disabled={isCalling}
           >
             {isCalling ? "Initiating..." : "Make Call"}
           </Button>

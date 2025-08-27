@@ -17,11 +17,7 @@ const DynamicMetricsInputExample = () => {
 
   const watchedMetrics = watch();
 
-  const onSubmit = (data) => {
-    console.log("Form submitted with data:", data);
-    console.log("Metrics data:", data.basicMetrics);
-    console.log("Custom metrics:", data.customMetrics);
-  };
+  const onSubmit = (data) => {};
 
   const handleReset = () => {
     reset({

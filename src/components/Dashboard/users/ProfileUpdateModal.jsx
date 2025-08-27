@@ -1,51 +1,39 @@
 import React from "react";
 import DSForm from "@/components/Forms/DSForm";
 import DSInput from "@/components/Forms/DSInput";
-import DSSelect from "@/components/Forms/DSSelect";
 import DSFile from "@/components/Forms/DSFile";
 import DSModal from "@/components/Shared/DSModal/DSModal";
-import { useGetAllRolesQuery } from "@/redux/api/rolesApi";
-import { useUpdateUserMutation } from "@/redux/api/userApi";
+import { useUpdateUserProfileMutation } from "@/redux/api/userApi";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Box, Paper, Typography, Button } from "@mui/material";
-import { FiEdit, FiUser, FiBriefcase, FiInfo } from "react-icons/fi";
+import { FiEdit, FiUser, FiInfo } from "react-icons/fi";
 import DSSubmitButton from "@/components/Shared/DSSubmitButton";
 
-const updateEmployee = z.object({
+const updateProfile = z.object({
   password: z.string().min(6).optional(),
-  employee: z.object({
+  user: z.object({
     firstName: z.string({ required_error: "First Name is required" }),
     lastName: z.string().optional(),
     email: z.string({ required_error: "Email is required" }).email(),
     profileImg: z.any().optional(),
     nationalId: z.string().optional(),
-    employeeId: z.string().optional(),
-    designation: z.string({ required_error: "Designation is required" }),
     contactNumber: z.string({ required_error: "Contact Number is required" }),
     address: z.string().optional(),
-    gender: z.enum(["MALE", "FEMALE"], {
-      required_error: "Gender is required",
-    }),
-    roleId: z.string({ required_error: "Role id is required" }),
   }),
 });
 
-const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
-  const {
-    data: rolesData,
-    isLoading: rolesLoading,
-    isError: rolesError,
-  } = useGetAllRolesQuery();
-  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
-  const roles = rolesData?.data || [];
+const ProfileUpdateModal = ({ open, setOpen, onClose, profile, onSuccess }) => {
+  const [updateUser, { isLoading: isUpdating }] =
+    useUpdateUserProfileMutation();
 
   const handleSubmit = async (values) => {
+    console.log(values);
     const formData = new FormData();
     formData.append("data", JSON.stringify({ user: values.user }));
     if (values.file) formData.append("file", values.file);
     try {
-      const res = updateUser({ id: user.id, data: formData }).unwrap();
+      const res = updateUser({ data: formData }).unwrap();
       toast.promise(Promise.resolve(res), {
         loading: "Updating...",
         success: (res) => {
@@ -53,18 +41,18 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
             if (typeof onClose === "function") onClose();
             else if (typeof setOpen === "function") setOpen(false);
             if (typeof onSuccess === "function") onSuccess();
-            return res?.message || "User updated successfully";
+            return res?.message || "Profile updated successfully";
           }
-          return res?.message || "User updated";
+          return res?.message || "Profile updated";
         },
         error: (error) => error?.message || "Something went wrong",
       });
     } catch (error) {
-      toast.error(error?.message || "Failed to update user");
+      toast.error(error?.message || "Failed to update profile");
     }
   };
 
-  if (!user) return null;
+  if (!profile) return null;
 
   return (
     <DSModal
@@ -89,7 +77,7 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
         >
           <FiEdit size={20} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Update User
+            Update Profile
           </Typography>
         </Box>
       }
@@ -101,16 +89,13 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
         onSubmit={handleSubmit}
         defaultValues={{
           user: {
-            firstName: user.profile?.firstName || "",
-            lastName: user.profile?.lastName || "",
-            email: user?.email || "",
+            firstName: profile?.employee?.firstName || "",
+            lastName: profile?.employee?.lastName || "",
+            email: profile?.email || "",
             profileImg: null,
-            nationalId: user.profile?.nationalId || "",
-            employeeId: user.employee?.employeeId || "",
-            designation: user.profile?.designation || "",
-            contactNumber: user.profile?.contactNumber || "",
-            address: user.profile?.address || "",
-            roleId: user?.role?.id || "",
+            nationalId: profile?.employee?.nationalId || "",
+            contactNumber: profile?.employee?.contactNumber || "",
+            address: profile?.employee?.address || "",
           },
         }}
         sx={{ "& > *": { mb: 4 } }}
@@ -180,7 +165,6 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
                   </Typography>
                   <DSInput
                     fullWidth
-                    // label="Enter First Name"
                     name="user.firstName"
                     required
                     sx={{
@@ -201,7 +185,6 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
                   </Typography>
                   <DSInput
                     fullWidth
-                    // label="Enter Last Name"
                     name="user.lastName"
                     sx={{
                       backgroundColor: "rgba(255, 255, 255, 0.5)",
@@ -221,107 +204,9 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
                   </Typography>
                   <DSInput
                     fullWidth
-                    // label="Enter Email"
                     name="user.email"
                     type="email"
                     required
-                    sx={{
-                      backgroundColor: "rgba(255, 255, 255, 0.5)",
-                      backdropFilter: "blur(8px)",
-                    }}
-                  />
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-
-          {/* Professional Information Section */}
-          <Paper
-            sx={{
-              background: "rgba(255, 255, 255, 0.7)",
-              backdropFilter: "blur(10px)",
-              borderRadius: "20px",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-              overflow: "hidden",
-              borderTop: "4px solid #10b981",
-            }}
-          >
-            <Box
-              sx={{
-                background:
-                  "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)",
-                p: 2.5,
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <FiBriefcase size={20} color="#10b981" />
-              <Typography
-                variant="h6"
-                sx={{
-                  color: "#047857",
-                  fontWeight: 600,
-                  fontSize: "1rem",
-                }}
-              >
-                Professional Information
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "rgba(4, 120, 87, 0.7)",
-                  fontSize: "0.8rem",
-                  ml: "auto",
-                }}
-              >
-                Work details
-              </Typography>
-            </Box>
-            <Box sx={{ p: 3 }}>
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                  gap: 3,
-                }}
-              >
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <Typography
-                    sx={{
-                      fontSize: "0.9rem",
-                      fontWeight: 600,
-                      color: "#475569",
-                    }}
-                  >
-                    Designation *
-                  </Typography>
-                  <DSInput
-                    fullWidth
-                    // label="Enter Designation"
-                    name="user.designation"
-                    required
-                    sx={{
-                      backgroundColor: "rgba(255, 255, 255, 0.5)",
-                      backdropFilter: "blur(8px)",
-                    }}
-                  />
-                </Box>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <Typography
-                    sx={{
-                      fontSize: "0.9rem",
-                      fontWeight: 600,
-                      color: "#475569",
-                    }}
-                  >
-                    Employee ID
-                  </Typography>
-                  <DSInput
-                    fullWidth
-                    // label="Enter Employee ID"
-                    name="user.employeeId"
                     sx={{
                       backgroundColor: "rgba(255, 255, 255, 0.5)",
                       backdropFilter: "blur(8px)",
@@ -340,34 +225,12 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
                   </Typography>
                   <DSInput
                     fullWidth
-                    // label="Enter Contact Number"
                     name="user.contactNumber"
                     required
                     sx={{
                       backgroundColor: "rgba(255, 255, 255, 0.5)",
                       backdropFilter: "blur(8px)",
                     }}
-                  />
-                </Box>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <Typography
-                    sx={{
-                      fontSize: "0.9rem",
-                      fontWeight: 600,
-                      color: "#475569",
-                    }}
-                  >
-                    Role *
-                  </Typography>
-                  <DSSelect
-                    name="user.roleId"
-                    options={roles.map((role) => ({
-                      id: role.id,
-                      name: role.name,
-                    }))}
-                    isLoading={rolesLoading}
-                    isError={rolesError}
-                    fullWidth
                   />
                 </Box>
               </Box>
@@ -438,7 +301,6 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
                   </Typography>
                   <DSInput
                     fullWidth
-                    label="Enter National ID"
                     name="user.nationalId"
                     sx={{
                       backgroundColor: "rgba(255, 255, 255, 0.5)",
@@ -464,7 +326,14 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
                     accept="image/*"
                   />
                 </Box>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Box
+                  sx={{
+                    gridColumn: { xs: "auto", md: "1 / span 2" },
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                  }}
+                >
                   <Typography
                     sx={{
                       fontSize: "0.9rem",
@@ -476,7 +345,6 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
                   </Typography>
                   <DSInput
                     fullWidth
-                    // label="Enter Address"
                     name="user.address"
                     sx={{
                       backgroundColor: "rgba(255, 255, 255, 0.5)",
@@ -496,7 +364,7 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
             onClick={() =>
               typeof onClose === "function" ? onClose() : setOpen(false)
             }
-            disabled={isUpdating || rolesLoading}
+            disabled={isUpdating}
             sx={{
               px: 4,
               py: 1.5,
@@ -522,12 +390,11 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
           <DSSubmitButton
             type="submit"
             isLoading={isUpdating}
-            disabled={rolesLoading}
             variant="warning"
             size="large"
             loadingText="Updating..."
           >
-            Update User
+            Update Profile
           </DSSubmitButton>
         </Box>
       </DSForm>
@@ -535,4 +402,4 @@ const UserUpdateModal = ({ open, setOpen, onClose, user, onSuccess }) => {
   );
 };
 
-export default UserUpdateModal;
+export default ProfileUpdateModal;

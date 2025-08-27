@@ -73,12 +73,10 @@ const DeliveryRatePage = () => {
           }
         },
         error: (error) => {
-          console.log(error.message);
           return error?.message || "Delete failed";
         },
       });
     } catch (error) {
-      console.error("Failed to delete delivery rate:", error);
       toast.error(error?.message || "Delete failed");
     }
   };

@@ -4,9 +4,7 @@ import DSKeywordsInput from "@/components/Forms/DSKeywordsInput";
 import React from "react";
 
 const SeoSection = ({ defaultValues = {} }) => {
-  const handleSubmit = (data) => {
-    console.log(data);
-  };
+  const handleSubmit = (data) => {};
   return (
     <>
       <div className="p-6 bg-white rounded-2xl shadow-md max-w-7xl mx-auto space-y-12 mt-4">

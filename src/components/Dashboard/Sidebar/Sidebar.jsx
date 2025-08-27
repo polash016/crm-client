@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import List from "@mui/material/List";
 import { Box, Stack, Typography, Divider } from "@mui/material";
 import { drawerItems } from "@/utils/drawerItems";
@@ -16,31 +16,31 @@ const Sidebar = () => {
   const { data, isLoading, isError } = useGetUserByIdQuery({ id: user?.id });
   const { updateUser } = useAuth();
 
+  // Safely extract user data and ensure it's valid
+  const userData = data?.data;
+
+  // Update user data safely - moved to useEffect to prevent render-time state updates
+  useEffect(() => {
+    if (userData) {
+      updateUser(userData);
+    }
+  }, [userData, updateUser]);
+
   if (isLoading) {
     return <SidebarSkeleton />;
   }
 
-  // Safely extract user data and ensure it's valid
-  const userData = data?.data;
-  
   // Safely extract permissions and ensure it's an array
   const permissions = userData?.permissions;
   const permissionsArray = Array.isArray(permissions) ? permissions : [];
-  
+
   // Safely extract user name and role
-  const userName = typeof userData?.name === 'string' ? userData.name : 'User';
-  const userRole = typeof userData?.userType === 'string' ? userData.userType : 'Employee';
-  
+  const userName = typeof userData?.name === "string" ? userData.name : "User";
+  const userRole =
+    typeof userData?.userType === "string" ? userData.userType : "Employee";
+
   // Get first character of name safely
   const userInitial = userName.charAt(0).toUpperCase();
-  
-  // Update user data safely
-  if (userData) {
-    updateUser(userData);
-  }
-
-  console.log("User data:", userData);
-  console.log("Permissions array:", permissionsArray);
 
   return (
     <Box
@@ -53,7 +53,8 @@ const Sidebar = () => {
         display: "flex",
         flexDirection: "column",
         alignItems: "stretch",
-        background: "linear-gradient(180deg,rgb(17, 44, 87) 0%,rgb(36, 65, 107) 30%,rgb(30, 61, 104) 70%,rgb(7, 22, 43) 100%)",
+        background:
+          "linear-gradient(180deg,rgb(17, 44, 87) 0%,rgb(36, 65, 107) 30%,rgb(30, 61, 104) 70%,rgb(7, 22, 43) 100%)",
         borderRight: "1px solid rgba(148, 163, 184, 0.2)",
         "&::before": {
           content: '""',
@@ -62,7 +63,8 @@ const Sidebar = () => {
           left: 0,
           right: 0,
           height: "1px",
-          background: "linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, 0.4) 50%, transparent 100%)",
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, 0.4) 50%, transparent 100%)",
         },
       }}
     >
@@ -100,10 +102,10 @@ const Sidebar = () => {
               },
             }}
           >
-            <Image 
-              src={logo} 
-              alt="Digital Sheba Logo" 
-              width={200} 
+            <Image
+              src={logo}
+              alt="Digital Sheba Logo"
+              width={200}
               height={0}
               style={{
                 filter: "brightness(1.1) contrast(1.1)",
@@ -145,7 +147,8 @@ const Sidebar = () => {
               left: 0,
               right: 0,
               height: "1px",
-              background: "linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.3) 50%, transparent 100%)",
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.3) 50%, transparent 100%)",
             },
           }}
         >
@@ -198,18 +201,18 @@ const Sidebar = () => {
         </Box>
       )}
 
-      <Divider 
-        sx={{ 
-          mx: 2, 
-          mb: 2, 
+      <Divider
+        sx={{
+          mx: 2,
+          mb: 2,
           borderColor: "rgba(203, 213, 225, 0.2)",
           opacity: 0.6,
-        }} 
+        }}
       />
 
       {/* Navigation Items */}
-      <List 
-        sx={{ 
+      <List
+        sx={{
           zIndex: 2,
           flex: 1,
           px: 1,
@@ -217,10 +220,8 @@ const Sidebar = () => {
       >
         {(() => {
           const items = drawerItems(permissionsArray);
-          console.log("Generated drawer items:", items);
-          
+
           return items.map((item, index) => {
-            console.log(`Rendering item ${index}:`, item);
             return <SidebarItems key={index} item={item} />;
           });
         })()}

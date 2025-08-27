@@ -44,81 +44,73 @@ const CallHistory = ({
 }) => {
   const [selectedCall, setSelectedCall] = useState(null);
 
-  const getCallStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-      case "answered":
-        return <CallReceivedIcon color="success" />;
-      case "missed":
-      case "no_answer":
-        return <CallMissedIcon color="error" />;
-      case "initiated":
-      case "ringing":
-        return <CallMadeIcon color="primary" />;
-      case "scheduled":
-        return <ScheduleIcon color="warning" />;
-      default:
-        return <PhoneIcon color="action" />;
+  // Function to get employee display name
+  const getEmployeeDisplayName = (call) => {
+    if (call.user?.profile?.firstName || call.user?.profile?.lastName) {
+      const firstName = call.user.profile.firstName || "";
+      const lastName = call.user.profile.lastName || "";
+      return `${firstName} ${lastName}`.trim();
     }
+    return call.userId || "Unknown";
   };
 
-  const getCallStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-      case "answered":
-        return "success";
-      case "missed":
-      case "no_answer":
-        return "error";
-      case "initiated":
-      case "ringing":
-        return "primary";
-      case "scheduled":
-        return "warning";
-      default:
-        return "default";
-    }
-  };
-
-  const formatCallDuration = (duration) => {
-    if (!duration) return "N/A";
-
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
-
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    }
-    return `${seconds}s`;
-  };
-
-  const formatCallTime = (timestamp) => {
+  // Function to format date and time properly
+  const formatCallDateTime = (timestamp) => {
     if (!timestamp) return "N/A";
 
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
 
+    // Format for today
     if (diffInHours < 24) {
-      return date.toLocaleTimeString("en-US", {
+      return date.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
         hour12: true,
       });
-    } else if (diffInHours < 168) {
-      // 7 days
-      return date.toLocaleDateString("en-US", {
+    }
+    // Format for this week
+    else if (diffInHours < 168) {
+      return date.toLocaleString("en-US", {
         weekday: "short",
         month: "short",
         day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
-    } else {
-      return date.toLocaleDateString("en-US", {
+    }
+    // Format for older dates
+    else {
+      return date.toLocaleString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
     }
+  };
+
+  // Function to get relative time (e.g., "2 hours ago")
+  const getRelativeTime = (timestamp) => {
+    if (!timestamp) return "";
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    return "";
   };
 
   const handleNewCall = () => {
@@ -155,9 +147,9 @@ const CallHistory = ({
               <CloseIcon />
             </IconButton>
           </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          {/* <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             {leadName} • {phoneNumber}
-          </Typography>
+          </Typography> */}
         </DialogTitle>
 
         <DialogContent>
@@ -181,19 +173,19 @@ const CallHistory = ({
                 <Typography variant="body2" color="text.secondary">
                   Last call:{" "}
                   {callHistory.length > 0
-                    ? formatCallTime(callHistory[0]?.timestamp)
+                    ? formatCallDateTime(callHistory[0]?.createdAt)
                     : "Never"}
                 </Typography>
               </Box>
 
-              <Button
+              {/* <Button
                 variant="contained"
                 startIcon={<PhoneIcon />}
                 onClick={handleNewCall}
                 sx={{ minWidth: 120 }}
               >
                 New Call
-              </Button>
+              </Button> */}
             </Box>
 
             {/* Call History Table */}
@@ -202,43 +194,31 @@ const CallHistory = ({
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Time</TableCell>
-                      <TableCell>Duration</TableCell>
+                      <TableCell>Date & Time</TableCell>
                       <TableCell>Employee</TableCell>
                       <TableCell>Reason</TableCell>
-                      <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {callHistory.map((call, index) => (
-                      <TableRow key={index} hover>
+                      <TableRow
+                        key={call.id || index}
+                        hover
+                        onClick={() => handleCallDetails(call)}
+                        sx={{ cursor: "pointer" }}
+                      >
                         <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            {getCallStatusIcon(call.status)}
-                            <Chip
-                              label={call.status}
-                              size="small"
-                              color={getCallStatusColor(call.status)}
-                              variant="outlined"
-                            />
+                          <Box>
+                            <Typography variant="body2" fontWeight={500}>
+                              {formatCallDateTime(call.createdAt)}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {getRelativeTime(call.createdAt)}
+                            </Typography>
                           </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {formatCallTime(call.timestamp)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {formatCallDuration(call.duration)}
-                          </Typography>
                         </TableCell>
                         <TableCell>
                           <Box
@@ -249,30 +229,23 @@ const CallHistory = ({
                             }}
                           >
                             <PersonIcon fontSize="small" color="action" />
-                            <Typography variant="body2">
-                              {call.employeeName || "Unknown"}
+                            <Typography variant="body2" fontWeight={500}>
+                              {getEmployeeDisplayName(call)}
                             </Typography>
                           </Box>
                         </TableCell>
                         <TableCell>
                           <Typography
                             variant="body2"
-                            noWrap
-                            sx={{ maxWidth: 150 }}
+                            sx={{
+                              maxWidth: 200,
+                              color: call.reason
+                                ? "text.primary"
+                                : "text.secondary",
+                            }}
                           >
                             {call.reason || "No reason provided"}
                           </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip title="View call details">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleCallDetails(call)}
-                              sx={{ color: "primary.main" }}
-                            >
-                              <HistoryIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -310,50 +283,30 @@ const CallHistory = ({
         <DialogContent>
           {selectedCall && (
             <Stack spacing={2} sx={{ mt: 1 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {selectedCall.status}
-                </Typography>
-                <Chip
-                  icon={getCallStatusIcon(selectedCall.status)}
-                  label={selectedCall.status}
-                  color={getCallStatusColor(selectedCall.status)}
-                />
-              </Box>
-
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   Date & Time
                 </Typography>
-                <Typography variant="body1">
-                  {new Date(selectedCall.timestamp).toLocaleString()}
+                <Typography variant="body1" fontWeight={500}>
+                  {formatCallDateTime(selectedCall.createdAt)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {getRelativeTime(selectedCall.createdAt)}
                 </Typography>
               </Box>
-
-              {selectedCall.duration && (
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Duration
-                  </Typography>
-                  <Typography variant="body1">
-                    {formatCallDuration(selectedCall.duration)}
-                  </Typography>
-                </Box>
-              )}
 
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   Employee
                 </Typography>
-                <Typography variant="body1">
-                  {selectedCall.employeeName || "Unknown"}
+                <Typography variant="body1" fontWeight={500}>
+                  {getEmployeeDisplayName(selectedCall)}
                 </Typography>
+                {selectedCall.userId && (
+                  <Typography variant="caption" color="text.secondary">
+                    ID: {selectedCall.userId}
+                  </Typography>
+                )}
               </Box>
 
               {selectedCall.reason && (
@@ -365,14 +318,23 @@ const CallHistory = ({
                 </Box>
               )}
 
-              {selectedCall.notes && (
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Notes
-                  </Typography>
-                  <Typography variant="body1">{selectedCall.notes}</Typography>
-                </Box>
-              )}
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Call ID
+                </Typography>
+                <Typography variant="body2" fontFamily="monospace">
+                  {selectedCall.id}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Lead ID
+                </Typography>
+                <Typography variant="body2" fontFamily="monospace">
+                  {selectedCall.leadId}
+                </Typography>
+              </Box>
             </Stack>
           )}
         </DialogContent>

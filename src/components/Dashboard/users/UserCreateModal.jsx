@@ -15,33 +15,59 @@ import { useGetAllRolesQuery } from "@/redux/api/rolesApi";
 import { useCreateUserMutation } from "@/redux/api/userApi";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+const userType = [
+  { id: "ADMIN", name: "ADMIN" },
+  { id: "EMPLOYEE", name: "EMPLOYEE" },
+];
+
 // Enhanced Validation schema
 const createEmployee = z.object({
   password: z
     .string({ required_error: "Password is required" })
     .min(6, "Password must be at least 6 characters")
     .max(20, "Password must not exceed 20 characters"),
-  employee: z.object({
+  user: z.object({
     firstName: z
       .string({ required_error: "First Name is required" })
-      .min(2, "First name must be at least 2 characters")
-      .max(50, "First name must not exceed 50 characters")
+      .nonempty("First Name is required")
       .regex(/^[a-zA-Z\s]+$/, "First name can only contain letters and spaces"),
-    lastName: z.string().regex(/^[a-zA-Z\s]*$/, "Last name can only contain letters and spaces").optional(),
-    email: z.string({ required_error: "Email is required" }).email("Please enter a valid email address").min(5).max(100),
+    lastName: z
+      .string()
+      .regex(/^[a-zA-Z\s]*$/, "Last name can only contain letters and spaces")
+      .optional(),
+    email: z
+      .string({ required_error: "Email is required" })
+      .email("Please enter a valid email address")
+      .nonempty("Email is required"),
     profileImg: z.any().optional(),
-    nationalId: z.string().regex(/^[0-9]*$/, "National ID must contain only numbers").optional(),
-    employeeId: z.string().min(2).max(20),
-    designation: z.string({ required_error: "Designation is required" }).min(2).max(100),
-    contactNumber: z.string({ required_error: "Contact Number is required" }).regex(/^\+?[0-9]{10,15}$/),
-    address: z.string().max(200).optional(),
-    gender: z.enum(["MALE", "FEMALE"], { required_error: "Please select a gender" }),
-    roleId: z.string({ required_error: "Please select a role" }).nonempty("Role is required"),
+    nationalId: z
+      .string()
+      .regex(/^[0-9]*$/, "National ID must contain only numbers")
+      .optional(),
+    employeeId: z
+      .string({ required_error: "Employee ID is required" })
+      .nonempty("Employee ID is required"),
+    designation: z
+      .string({ required_error: "Designation is required" })
+      .nonempty("Designation is required"),
+    contactNumber: z
+      .string({ required_error: "Contact Number is required" })
+      .regex(/^\+?[0-9]{10,15}$/, "Contact Number must contain only numbers")
+      .nonempty("Contact Number is required"),
+    address: z.string().optional(),
+
+    roleId: z
+      .string({ required_error: "Please select a role" })
+      .nonempty("Role is required"),
   }),
 });
 
 const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
-  const { data: rolesData, isLoading: rolesLoading, isError: rolesError } = useGetAllRolesQuery();
+  const {
+    data: rolesData,
+    isLoading: rolesLoading,
+    isError: rolesError,
+  } = useGetAllRolesQuery();
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
 
   const roles = rolesData?.data || [];
@@ -53,7 +79,10 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (values) => {
     const formData = new FormData();
-    formData.append("data", JSON.stringify({ password: values.password, employee: values.employee }));
+    formData.append(
+      "data",
+      JSON.stringify({ password: values.password, user: values.user })
+    );
     if (values.file) formData.append("file", values.file);
 
     try {
@@ -62,7 +91,8 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
         loading: "Creating...",
         success: (res) => {
           if (res?.data?.id) {
-            if (typeof onClose === "function") onClose(); else if (typeof setOpen === "function") setOpen(false);
+            if (typeof onClose === "function") onClose();
+            else if (typeof setOpen === "function") setOpen(false);
             if (typeof onSuccess === "function") onSuccess();
             return res?.message || "User created successfully";
           }
@@ -83,16 +113,16 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
       title={
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
-            color: '#1e293b',
+            background: "linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)",
+            color: "#1e293b",
             px: 3,
             py: 2,
-            borderRadius: '16px',
+            borderRadius: "16px",
             fontWeight: 600,
-            textAlign: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             gap: 1,
           }}
         >
@@ -110,7 +140,7 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
         resolver={zodResolver(createEmployee)}
         defaultValues={{
           password: "",
-          employee: {
+          user: {
             firstName: "",
             lastName: "",
             email: "",
@@ -119,11 +149,12 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
             gender: "",
             roleId: "",
             employeeId: "",
+            userType: "",
           },
         }}
-        sx={{ '& > *': { mb: 4 } }}
+        sx={{ "& > *": { mb: 4 } }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {/* Basic Information Section */}
           <Paper
             elevation={0}
@@ -162,7 +193,8 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
                   width: 32,
                   height: 32,
                   borderRadius: "10px",
-                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  background:
+                    "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -194,22 +226,110 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
               </Box>
             </Box>
 
-            <Box sx={{ p: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+            <Box
+              sx={{
+                p: 3,
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 3,
+              }}
+            >
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>First Name *</Typography>
-                <DSInput fullWidth  name={"user.firstName"} required sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  First Name *
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"user.firstName"}
+                  required
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Last Name</Typography>
-                <DSInput fullWidth name={"user.lastName"} sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Last Name
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"user.lastName"}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Email *</Typography>
-                <DSInput fullWidth name={"user.email"} type="email" required sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Email *
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"user.email"}
+                  type="email"
+                  required
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Password *</Typography>
-                <DSInput fullWidth  name={"password"} type="password" required sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Password *
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"password"}
+                  type="password"
+                  required
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
               </Box>
             </Box>
           </Paper>
@@ -252,7 +372,8 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
                   width: 32,
                   height: 32,
                   borderRadius: "10px",
-                  background: "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)",
+                  background:
+                    "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -284,22 +405,128 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
               </Box>
             </Box>
 
-            <Box sx={{ p: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+            <Box
+              sx={{
+                p: 3,
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 3,
+              }}
+            >
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Designation *</Typography>
-                <DSInput fullWidth name={"user.designation"} required sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Designation *
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"user.designation"}
+                  required
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Employee ID</Typography>
-                <DSInput fullWidth name={"user.employeeId"} sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Employee ID
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"user.employeeId"}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Contact Number *</Typography>
-                <DSInput fullWidth name={"user.contactNumber"} required sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  User Type
+                </Typography>
+                <DSSelect
+                  name="user.userType"
+                  options={userType.map((userType) => ({
+                    id: userType.id,
+                    name: userType.name,
+                  }))}
+                  fullWidth
+                />
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Role *</Typography>
-                <DSSelect name="user.roleId" options={roles.map((role) => ({ id: role.id, name: role.name }))} isLoading={rolesLoading} isError={rolesError} fullWidth />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Contact Number *
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"user.contactNumber"}
+                  required
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
+              </Box>
+              <Box sx={{ mb: 2 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Role *
+                </Typography>
+                <DSSelect
+                  name="user.roleId"
+                  options={roles.map((role) => ({
+                    id: role.id,
+                    name: role.name,
+                  }))}
+                  isLoading={rolesLoading}
+                  isError={rolesError}
+                  fullWidth
+                />
               </Box>
             </Box>
           </Paper>
@@ -342,7 +569,8 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
                   width: 32,
                   height: 32,
                   borderRadius: "10px",
-                  background: "linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)",
+                  background:
+                    "linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -374,19 +602,79 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
               </Box>
             </Box>
 
-            <Box sx={{ p: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-             
+            <Box
+              sx={{
+                p: 3,
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 3,
+              }}
+            >
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>National ID</Typography>
-                <DSInput fullWidth name={"user.nationalId"} sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  National ID
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"user.nationalId"}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Profile Image</Typography>
-                <DSFile name={"file"} label={"Upload Profile Image"} fullWidth type="file" accept="image/*" />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Profile Image
+                </Typography>
+                <DSFile
+                  name={"file"}
+                  label={"Upload Profile Image"}
+                  fullWidth
+                  type="file"
+                  accept="image/*"
+                />
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e293b", mb: 1.5, fontSize: "0.875rem" }}>Address</Typography>
-                <DSInput fullWidth name={"user.address"} sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(8px)' } }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    mb: 1.5,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Address
+                </Typography>
+                <DSInput
+                  fullWidth
+                  name={"user.address"}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
               </Box>
             </Box>
           </Paper>
@@ -402,8 +690,6 @@ const UserCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
             pt: 3,
           }}
         >
-         
-          
           <DSSubmitButton
             type="submit"
             isLoading={isCreating}

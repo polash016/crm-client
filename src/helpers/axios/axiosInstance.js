@@ -45,7 +45,6 @@ axiosInstance.interceptors.response.use(
   async function (error) {
     const config = error.config;
 
-    console.log("isRetry", error);
     // if (error.code === "ERR_NETWORK") {
     //   saveToLocalStorage(authKey, "");
     //   window.location.href = "/login"; // Redirect to login or handle logout logic
@@ -63,8 +62,6 @@ axiosInstance.interceptors.response.use(
         config.headers["Authorization"] = accessToken;
         return axiosInstance(config); // Retry the original request
       } catch (refreshError) {
-        // Handle refresh failure (logout, redirect, etc.)
-        console.log(refreshError);
         return Promise.reject(refreshError);
       }
     } else {

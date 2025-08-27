@@ -30,7 +30,6 @@ const DSSelect = ({
   // };
 
   const fieldError = getNestedError(errors, name);
-  console.log({ errors, fieldError });
   return (
     <Controller
       control={control}

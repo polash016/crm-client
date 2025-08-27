@@ -17,7 +17,6 @@ export const userApi = baseApi.injectEndpoints({
     }),
     getUserById: builder.query({
       query: (id) => {
-        console.log(id);
         return {
           url: `/users/${id.id}`,
           method: "GET",
@@ -36,7 +35,7 @@ export const userApi = baseApi.injectEndpoints({
     }),
     createUser: builder.mutation({
       query: (body) => ({
-        url: "/users/create-employee",
+        url: "/users/create-user",
         method: "POST",
         contentType: "multipart/form-data",
         data: body,
@@ -44,10 +43,9 @@ export const userApi = baseApi.injectEndpoints({
       invalidatesTags: ["User"],
     }),
     updateUser: builder.mutation({
-      query: ({ data }) => {
-        console.log(data);
+      query: ({ id, data }) => {
         return {
-          url: `/users/my-profile`,
+          url: `/users/update-user/${id}`,
           method: "PATCH",
           contentType: "multipart/form-data",
           data: data,
@@ -55,9 +53,18 @@ export const userApi = baseApi.injectEndpoints({
       },
       invalidatesTags: (result, error, { id }) => [{ type: "User", id }],
     }),
+    updateUserProfile: builder.mutation({
+      query: ({ data }) => ({
+        url: `/users/my-profile`,
+        method: "PATCH",
+        contentType: "multipart/form-data",
+        data: data,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: "User", id }],
+    }),
     deleteUser: builder.mutation({
       query: (id) => ({
-        url: `/users/delete-employee/${id}`,
+        url: `/users/delete-user/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["User"],
@@ -72,4 +79,5 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetMyProfileQuery,
+  useUpdateUserProfileMutation,
 } = userApi;

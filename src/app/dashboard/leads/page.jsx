@@ -15,8 +15,6 @@ const page = () => {
     const csvHeaders =
       paddedHeaders.map((header) => `"${header}"`).join(",") + "\r\n";
 
-    console.log({ csvHeaders, paddedHeaders });
-
     // Create a Blob with the CSV content
     const blob = new Blob([csvHeaders], { type: "text/csv;charset=utf-8;" });
 

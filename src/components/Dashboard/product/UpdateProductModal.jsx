@@ -17,8 +17,6 @@ const UpdateProductModal = ({ open, setOpen, product }) => {
   const { reset } = useForm();
   const [updateProduct, { isLoading, isError }] = useUpdateProductMutation();
 
-  console.log("product from UpdateProductModal", product);
-
   // Set default values when product changes
   useEffect(() => {
     if (product) {
@@ -58,8 +56,6 @@ const UpdateProductModal = ({ open, setOpen, product }) => {
       return;
     }
 
-    console.log(data);
-
     const formData = new FormData();
 
     const { coverImg, files, ...rest } = data;
@@ -90,7 +86,6 @@ const UpdateProductModal = ({ open, setOpen, product }) => {
       });
     }
 
-    console.log("Update data:", rest);
     const res = updateProduct({ id: product.id, data: formData }).unwrap();
 
     toast.promise(res, {
@@ -105,7 +100,6 @@ const UpdateProductModal = ({ open, setOpen, product }) => {
         }
       },
       error: (error) => {
-        console.log(error.message);
         return error?.message || "Something went wrong";
       },
     });

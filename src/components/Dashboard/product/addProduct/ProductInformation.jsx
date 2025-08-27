@@ -25,8 +25,6 @@ const ProductInformation = ({
     isError: isErrorBrands,
   } = useGetAllBrandsQuery({});
 
-  console.log(defaultValues);
-
   const {
     data: tenants,
     isLoading: isLoadingTenants,
@@ -53,7 +51,6 @@ const ProductInformation = ({
     setSubCategories(selectedCat?.subCategories || []);
   };
 
-  console.log("categories", categories);
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md max-w-7xl mx-auto space-y-12 mt-4">
       <div className=" rounded-md">

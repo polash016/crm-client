@@ -68,7 +68,6 @@ export const getNewAccessToken2 = async () => {
 
     return response.json();
   } catch (error) {
-    console.error("Refresh token error:", error);
     throw error;
   }
 };

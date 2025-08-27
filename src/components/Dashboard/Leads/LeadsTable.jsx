@@ -34,6 +34,7 @@ import {
 } from "@/redux/api/leadsApi";
 import { useDebounced } from "@/redux/hooks";
 import ModernTable from "@/components/Shared/ModernTable";
+import { getOutcomeColor, getRowStyling, getTimeAgo } from "./LeadTable/utils";
 import ResponsiveContainer from "@/components/Shared/ResponsiveContainer";
 import DSPagination from "@/components/Dashboard/pagination/DSPagination";
 import SecurePhone from "@/components/Shared/SecurePhone";
@@ -42,9 +43,13 @@ import AssignmentModal from "./AssignmentModal";
 import NewLeadModal from "./NewLeadModal";
 import LeadDetailsModal from "./LeadDetailsModal";
 import AddFollowUpModal from "./AddFollowUpModal";
+import { PhoneVisibilityProvider } from "@/contexts/PhoneVisibilityContext";
 import { toast } from "sonner";
+import SummaryStats from "./LeadTable/SummaryStats";
+import { useAuth } from "@/hooks/useAuth";
 
 const LeadsTable = () => {
+  const { canCreate, canDelete, hasAnyPermission } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(30);
@@ -87,6 +92,8 @@ const LeadsTable = () => {
     };
   }, [selectedRows.length]);
 
+  // helpers moved to LeadTable/utils
+
   // Build query object like ProductTable
 
   if (!!debouncedTerm) {
@@ -113,6 +120,11 @@ const LeadsTable = () => {
   } = useGetLeadsQuery({ ...query });
 
   const rows = leadsData?.data || [];
+  const canUseCsvMulti = hasAnyPermission([
+    "manage_csvs",
+    "create_csv",
+    "delete_csv",
+  ]);
   const totalPages = Math.ceil((leadsData?.meta?.total || 0) / limit);
   const totalItems = leadsData?.meta?.total || 0;
 
@@ -131,17 +143,14 @@ const LeadsTable = () => {
 
   // Selection handlers
   const handleSelectionChange = (newSelection) => {
-    console.log("handleSelectionChange called with:", newSelection);
     setSelectedRows(newSelection);
   };
 
   const handleSelectAll = (newSelection) => {
-    console.log("handleSelectAll called with:", newSelection);
     setSelectedRows(newSelection);
   };
 
   const handleClearSelection = () => {
-    console.log("handleClearSelection called");
     setSelectedRows([]);
   };
 
@@ -165,7 +174,6 @@ const LeadsTable = () => {
 
     const exportPromise = (async () => {
       // TODO: Implement actual bulk export API call
-      console.log("Bulk exporting leads:", selectedRows);
 
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 800));
@@ -181,11 +189,6 @@ const LeadsTable = () => {
   const handleFilteredExport = () => {
     const exportPromise = (async () => {
       // TODO: Implement actual filtered export API call
-      console.log("Exporting filtered leads with filters:", {
-        assignmentFilter,
-        statusFilter,
-        searchTerm,
-      });
 
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -214,8 +217,6 @@ const LeadsTable = () => {
       status: "initiated",
     };
 
-    console.log("Call log:", callLog);
-
     // Here you would typically send this to your backend
     // await logCall(callLog);
 
@@ -225,7 +226,7 @@ const LeadsTable = () => {
 
   // Call history handlers
   const handleOpenCallHistory = (lead) => {
-    setSelectedLeadForHistory(lead);
+    setSelectedLeadForHistory(lead?.callLog);
     setCallHistoryOpen(true);
   };
 
@@ -240,10 +241,10 @@ const LeadsTable = () => {
     setDetailsModalOpen(true);
   };
 
-  const handleCloseDetailsModal = () => {
-    setDetailsModalOpen(false);
-    setSelectedLeadForDetails(null);
-  };
+  // const handleCloseDetailsModal = () => {
+  //   setDetailsModalOpen(false);
+  //   setSelectedLeadForDetails(null);
+  // };
 
   // Add Follow Up modal handlers
   const handleOpenAddFollowUpModal = (lead) => {
@@ -251,22 +252,21 @@ const LeadsTable = () => {
     setAddFollowUpModalOpen(true);
   };
 
-  const handleCloseAddFollowUpModal = () => {
-    setAddFollowUpModalOpen(false);
-    setSelectedLeadForFollowUp(null);
-  };
+  // const handleCloseAddFollowUpModal = () => {
+  //   setAddFollowUpModalOpen(false);
+  //   setSelectedLeadForFollowUp(null);
+  // };
 
   const handleNewCallFromHistory = (callData) => {
     // This will trigger a new call from the call history
-    console.log("New call from history:", callData);
     // You could implement additional logic here
   };
 
   // Assignment handlers
-  const handleOpenAssignmentModal = (lead) => {
-    setSelectedLeadForAssignment(lead);
-    setAssignmentModalOpen(true);
-  };
+  // const handleOpenAssignmentModal = (lead) => {
+  //   setSelectedLeadForAssignment(lead);
+  //   setAssignmentModalOpen(true);
+  // };
 
   const handleCloseAssignmentModal = () => {
     setAssignmentModalOpen(false);
@@ -295,9 +295,6 @@ const LeadsTable = () => {
 
   // Handle bulk assignment
   const handleBulkAssignment = async (leadIds, userId) => {
-    console.log("leadIds", leadIds);
-    console.log("userId", userId);
-
     try {
       const res = await bulkAssignLeads({
         leadIds,
@@ -376,9 +373,9 @@ const LeadsTable = () => {
   };
 
   // Filter handlers
-  const handleFilterClick = (event) => {
-    setFilterAnchorEl(event.currentTarget);
-  };
+  // const handleFilterClick = (event) => {
+  //   setFilterAnchorEl(event.currentTarget);
+  // };
 
   const handleFilterClose = () => {
     setFilterAnchorEl(null);
@@ -423,8 +420,6 @@ const LeadsTable = () => {
   const handleBulkEdit = () => {
     if (selectedRows.length === 0) return;
 
-    // TODO: Implement bulk edit functionality
-    console.log("Bulk edit for:", selectedRows);
     toast.info("Bulk edit functionality coming soon!");
   };
 
@@ -439,37 +434,424 @@ const LeadsTable = () => {
 
   const columns = [
     {
-      id: "name",
-      label: "Name",
-      render: (row) => row?.name || "-",
+      id: "leadInfo",
+      label: "Information",
+      render: (row) => (
+        <Box sx={{ minWidth: 160 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {row?.name || "No Name"}
+          </Typography>
+          {/* <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mb: 0.5 }}
+          >
+            {row?.phone || "No Phone"}
+          </Typography> */}
+          {row?.address && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block" }}
+            >
+              📍{" "}
+              {row.address.length > 50
+                ? `${row.address.substring(0, 25)}...`
+                : row.address}
+            </Typography>
+          )}
+        </Box>
+      ),
     },
     {
-      id: "phone",
-      label: "Phone",
+      id: "status",
+      label: "Priority",
+      render: (row) => {
+        // Determine lead status based on follow-up data
+        let status = "New";
+        let statusColor = "default";
+        let statusTextColor = "default";
+        let priority = "Normal";
+        let priorityColor = "default";
+
+        if (row?.leadFollowUp && row.leadFollowUp.length > 0) {
+          const lastFollowUp = row.leadFollowUp[row.leadFollowUp.length - 1];
+          if (lastFollowUp.outcome === "COMPLETED") {
+            status = "Followed Up";
+            statusColor = "success";
+            statusTextColor = "white";
+          } else if (
+            lastFollowUp.outcome === "NO_ANSWER" ||
+            lastFollowUp.outcome === "BUSY"
+          ) {
+            status = "Contact Attempted";
+            statusColor = "warning";
+          }
+        }
+
+        // Determine priority based on nextFollowUpAt
+        if (row?.nextFollowUpAt) {
+          const followUpDate = new Date(row.nextFollowUpAt);
+          const now = new Date();
+          const timeDiff = followUpDate.getTime() - now.getTime();
+          const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+          if (daysDiff < 0) {
+            priority = "Urgent";
+            priorityColor = "error";
+          } else if (daysDiff === 0) {
+            priority = "High";
+            priorityColor = "warning";
+          } else if (daysDiff <= 2) {
+            priority = "Medium";
+            priorityColor = "info";
+          }
+        }
+
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 0.5,
+            }}
+          >
+            <Chip
+              label={status}
+              size="small"
+              color={statusColor}
+              sx={{ fontSize: "0.7rem", color: statusTextColor }}
+            />
+            <Chip
+              label={priority}
+              size="small"
+              color={priorityColor}
+              variant="outlined"
+              sx={{ fontSize: "0.7rem" }}
+            />
+          </Box>
+        );
+      },
+    },
+    {
+      id: "followUpStatus",
+      label: "Status",
+      render: (row) => {
+        if (!row?.nextFollowUpAt) {
+          return (
+            <Box sx={{ textAlign: "center" }}>
+              <Chip
+                label="No Follow Up"
+                size="small"
+                color="default"
+                variant="outlined"
+                sx={{ fontSize: "0.7rem" }}
+              />
+            </Box>
+          );
+        }
+
+        const followUpDate = new Date(row.nextFollowUpAt);
+        const now = new Date();
+        const timeDiff = followUpDate.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+        let statusText = "";
+        let statusColor = "";
+        let urgencyIcon = "";
+
+        if (daysDiff < 0) {
+          statusText = `${Math.abs(daysDiff)} days overdue`;
+          statusColor = "#dc2626";
+          urgencyIcon = "🚨";
+        } else if (daysDiff === 0) {
+          statusText = "Due today";
+          statusColor = "#ea580c";
+          urgencyIcon = "⚠️";
+        } else if (daysDiff === 1) {
+          statusText = "Due tomorrow";
+          statusColor = "#ca8a04";
+          urgencyIcon = "📅";
+        } else {
+          statusText = `${daysDiff} days left`;
+          statusColor = "#059669";
+          urgencyIcon = "📋";
+        }
+
+        return (
+          <Box sx={{ textAlign: "center" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                color: statusColor,
+                mb: 0.5,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 0.5,
+              }}
+            >
+              {urgencyIcon} {statusText}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: "0.7rem" }}
+            >
+              {followUpDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </Typography>
+          </Box>
+        );
+      },
+    },
+    {
+      id: "lastActivity",
+      label: "Activity",
+      render: (row) => {
+        // Get the most recent activity (follow-up or call)
+        let lastActivity = null;
+        let activityType = "";
+        let activityDate = null;
+
+        // Check for last follow-up
+        if (row?.leadFollowUp && row.leadFollowUp.length > 0) {
+          const lastFollowUp = row.leadFollowUp[row.leadFollowUp.length - 1];
+          if (lastFollowUp.attemptedAt) {
+            lastActivity = lastFollowUp;
+            activityType = "Follow-up";
+            activityDate = new Date(lastFollowUp.attemptedAt);
+          }
+        }
+
+        // Check for last call (if more recent)
+        if (row?.callLog && row.callLog.length > 0) {
+          const lastCall = row.callLog[row.callLog.length - 1];
+          if (lastCall.createdAt) {
+            const callDate = new Date(lastCall.createdAt);
+            if (!activityDate || callDate > activityDate) {
+              lastActivity = lastCall;
+              activityType = "Call";
+              activityDate = callDate;
+            }
+          }
+        }
+
+        if (!lastActivity) {
+          return (
+            <Typography variant="body2" color="text.secondary">
+              No activity
+            </Typography>
+          );
+        }
+
+        const timeAgo = getTimeAgo(activityDate);
+
+        return (
+          <Box sx={{ minWidth: 150 }}>
+            {/* Line 1: Type + Reason + TimeAgo */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                mb: 0.5,
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {activityType}:{" "}
+                {row?.callLog[0]?.reason.slice(0, 15) || "No reason"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {timeAgo}
+              </Typography>
+            </Box>
+
+            {/* Line 2: Outcome + Note (truncated) */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                overflow: "hidden",
+              }}
+            >
+              {row?.leadFollowUp[0]?.note && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                  // sx={{ flex: 1, minWidth: 0 }}
+                >
+                  Note: {row.leadFollowUp[0].note}
+                </Typography>
+              )}
+
+              {lastActivity.outcome && (
+                <Chip
+                  label={lastActivity.outcome}
+                  size="small"
+                  color={getOutcomeColor(lastActivity.outcome)}
+                  sx={{ fontSize: "0.6rem", height: "20px", color: "white" }}
+                />
+              )}
+            </Box>
+          </Box>
+        );
+      },
+    },
+    {
+      id: "nextAction",
+      label: "Next Action",
+      render: (row) => {
+        let actionText = "";
+        let actionColor = "";
+        let actionIcon = "";
+
+        if (!row?.nextFollowUpAt) {
+          actionText = "Schedule follow-up";
+          actionColor = "warning";
+          actionIcon = "📅";
+        } else {
+          const followUpDate = new Date(row.nextFollowUpAt);
+          const now = new Date();
+          const timeDiff = followUpDate.getTime() - now.getTime();
+          const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+          if (daysDiff < 0) {
+            actionText = "Immediate follow-up";
+            actionColor = "error";
+            actionIcon = "🚨";
+          } else if (daysDiff === 0) {
+            actionText = "Follow up today";
+            actionColor = "warning";
+            actionIcon = "⚠️";
+          } else if (daysDiff <= 2) {
+            actionText = "Prepare for follow-up";
+            actionColor = "info";
+            actionIcon = "📋";
+          } else {
+            actionText = "Monitor progress";
+            actionColor = "success";
+            actionIcon = "✅";
+          }
+        }
+
+        return (
+          <Box sx={{ textAlign: "center", minWidth: 120 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 500,
+                color: `${actionColor}.main`,
+                mb: 0.5,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 0,
+                fontSize: "0.8rem",
+              }}
+            >
+              {actionIcon} {actionText}
+            </Typography>
+            {row?.nextActionType && (
+              <Chip
+                label={row.nextActionType.replace(/_/g, " ")}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ fontSize: "0.6rem", height: "20px" }}
+              />
+            )}
+          </Box>
+        );
+      },
+    },
+    {
+      id: "assignedTo",
+      label: "Assigned To",
+      render: (row) => {
+        if (row?.user && row.user.profile) {
+          const firstName = row.user.profile.firstName || "";
+          const lastName = row.user.profile.lastName || "";
+          const fullName = `${firstName} ${lastName}`.trim();
+
+          if (fullName) {
+            return (
+              <Box sx={{ textAlign: "center" }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 500, mb: 0.5, fontSize: "0.8rem" }}
+                >
+                  {fullName}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.7rem" }}
+                >
+                  {row.user.userType}
+                </Typography>
+              </Box>
+            );
+          }
+        }
+
+        if (row?.assignedToId) {
+          return (
+            <Box sx={{ textAlign: "center" }}>
+              <Chip
+                label="Assigned"
+                size="small"
+                color="success"
+                variant="outlined"
+                sx={{ fontSize: "0.7rem" }}
+              />
+            </Box>
+          );
+        }
+
+        return (
+          <Chip
+            label="Unassigned"
+            size="small"
+            color="warning"
+            variant="outlined"
+            sx={{ fontSize: "0.7rem" }}
+          />
+        );
+      },
+    },
+    {
+      id: "actions",
+      label: "Actions",
       render: (row) => (
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "end",
-            gap: 1,
+            justifyContent: "center",
+            gap: 0.5,
+            flexWrap: "wrap",
           }}
         >
+          {/* Call Button */}
           <SecurePhone
             phoneNumber={row?.phone}
             onCall={(callData) => handleCallLog(row, callData)}
             variant="compact"
             userRole="employee"
+            phoneId={`lead-${row?.id || row?._id}-phone`}
+            row={row}
           />
-          {/* Security indicator */}
-          {/* <Tooltip title="Phone number is masked for security">
-            <SecurityIcon
-              fontSize="small"
-              color="action"
-              sx={{ opacity: 0.6 }}
-            />
-          </Tooltip> */}
-          {/* Call History Button */}
+
+          {/* Call History */}
           <Tooltip title="View call history">
             <IconButton
               size="small"
@@ -488,180 +870,8 @@ const LeadsTable = () => {
               <HistoryIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        </Box>
-      ),
-    },
 
-    {
-      id: "assignedtoId",
-      label: "Assigned To",
-      render: (row) => {
-        // Check if we have the assignedTo user data with profile
-        if (row?.user && row.user.profile) {
-          const firstName = row.user.profile.firstName || "";
-          const lastName = row.user.profile.lastName || "";
-          const fullName = `${firstName} ${lastName}`.trim();
-
-          if (fullName) {
-            return (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {fullName}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {row.user.email}
-                </Typography>
-              </Box>
-            );
-          }
-        }
-
-        // Check if we have assignedToId but no user data
-        if (row?.assignedToId) {
-          return (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Chip
-                label="Assigned"
-                size="small"
-                color="success"
-                variant="outlined"
-                sx={{ fontSize: "0.75rem" }}
-              />
-              <Tooltip title="User details not available">
-                <Typography variant="caption" color="text.secondary">
-                  {row?.user?.profile?.firstName
-                    ? `${row?.user?.profile?.firstName} ${row?.user?.profile?.lastName}`
-                    : "ID: " + row.assignedToId}
-                </Typography>
-              </Tooltip>
-            </Box>
-          );
-        }
-
-        return (
-          <Chip
-            label="Unassigned"
-            size="small"
-            color="warning"
-            variant="outlined"
-            sx={{ fontSize: "0.75rem" }}
-          />
-        );
-      },
-    },
-    {
-      id: "source",
-      label: "Source",
-      render: (row) => row?.source || "-",
-    },
-    // {
-    //   id: "status",
-    //   label: "Status",
-    //   render: (row) => {
-    //     const status = row?.status || "new";
-    //     const getStatusColor = (status) => {
-    //       switch (status.toLowerCase()) {
-    //         case "new":
-    //           return { bg: "#dbeafe", color: "#1e40af", border: "#bfdbfe" };
-    //         case "contacted":
-    //           return { bg: "#fef3c7", color: "#92400e", border: "#fde68a" };
-    //         case "qualified":
-    //           return { bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
-    //         case "unqualified":
-    //           return { bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
-    //         case "converted":
-    //           return { bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
-    //         case "lost":
-    //           return { bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
-    //         default:
-    //           return { bg: "#f3f4f6", color: "#374151", border: "#d1d5db" };
-    //       }
-    //     };
-
-    //     const statusConfig = getStatusColor(status);
-
-    //     return (
-    //       <Chip
-    //         label={status.charAt(0).toUpperCase() + status.slice(1)}
-    //         size="small"
-    //         sx={{
-    //           backgroundColor: statusConfig.bg,
-    //           color: statusConfig.color,
-    //           border: `1px solid ${statusConfig.border}`,
-    //           fontWeight: 600,
-    //           fontSize: "0.75rem",
-    //           height: "24px",
-    //         }}
-    //       />
-    //     );
-    //   },
-    // },
-    {
-      id: "followup",
-      label: "Follow Up",
-      render: (row) => {
-        if (!row?.nextFollowUpAt) {
-          return (
-            <Typography variant="body2" color="text.secondary">
-              No follow up
-            </Typography>
-          );
-        }
-
-        const followUpDate = new Date(row.nextFollowUpAt);
-        const now = new Date();
-        const timeDiff = followUpDate.getTime() - now.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-        let daysText = "";
-        let color = "";
-
-        if (daysDiff < 0) {
-          daysText = `${Math.abs(daysDiff)} days overdue`;
-          color = "#dc2626"; // Red for overdue
-        } else if (daysDiff === 0) {
-          daysText = "Today";
-          color = "#ea580c"; // Orange for today
-        } else if (daysDiff === 1) {
-          daysText = "Tomorrow";
-          color = "#ca8a04"; // Yellow for tomorrow
-        } else {
-          daysText = `${daysDiff} days remaining`;
-          color = "#059669"; // Green for future
-        }
-
-        return (
-          <Box sx={{ textAlign: "center" }}>
-            <Typography
-              variant="body2"
-              sx={{
-                fontWeight: 600,
-                color: color,
-                mb: 0.5,
-              }}
-            >
-              {daysText}
-            </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontSize: "0.75rem" }}
-            >
-              {followUpDate.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Typography>
-          </Box>
-        );
-      },
-    },
-    {
-      id: "addFollowUp",
-      label: "Add Follow Up",
-      render: (row) => (
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          {/* Add Follow Up */}
           <Tooltip title="Add Follow Up">
             <IconButton
               size="small"
@@ -679,14 +889,8 @@ const LeadsTable = () => {
               <AddIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        </Box>
-      ),
-    },
-    {
-      id: "details",
-      label: "Details",
-      render: (row) => (
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
+
+          {/* View Details */}
           <Tooltip title="View lead details">
             <IconButton
               size="small"
@@ -725,274 +929,287 @@ const LeadsTable = () => {
   }
 
   return (
-    <ResponsiveContainer>
-      <Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: { xs: "stretch", md: "center" },
-            flexDirection: { xs: "column", md: "row" },
-            gap: 2,
-            mb: 3,
-          }}
-        >
-          <Box>
-            <Typography
-              variant="h5"
-              sx={{ fontWeight: 600, color: "#1e293b", mb: 0.5 }}
-            >
-              Leads
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
-              Manage your leads and customer information
-            </Typography>
-          </Box>
-
-          {/* Search and New Lead Container */}
+    <PhoneVisibilityProvider>
+      <ResponsiveContainer>
+        <Box>
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              minWidth: { xs: "100%", md: "auto" },
-            }}
-          >
-            {/* Search Field */}
-            <Box sx={{ minWidth: { xs: "100%", md: "300px" } }}>
-              <TextField
-                size="small"
-                placeholder="Search leads by name, phone, address..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: "text.secondary" }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  width: "100%",
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "background.paper",
-                    "&:hover": {
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "primary.main",
-                      },
-                    },
-                  },
-                }}
-              />
-            </Box>
-
-            {/* New Lead Button */}
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenNewLeadModal}
-              sx={{
-                backgroundColor: "success.main",
-                "&:hover": {
-                  backgroundColor: "success.dark",
-                },
-                minWidth: "auto",
-                px: 2,
-                py: 1,
-                height: "40px", // Match TextField height
-                whiteSpace: "nowrap",
-              }}
-            >
-              New Lead
-            </Button>
-          </Box>
-
-          {/* Filter Button */}
-        </Box>
-
-        {/* Filter Summary */}
-        {hasActiveFilters && (
-          <Box
-            sx={{
-              mb: 2,
-              p: 1.5,
-              background: "rgba(59, 130, 246, 0.05)",
-              border: "1px solid rgba(59, 130, 246, 0.2)",
-              borderRadius: 2,
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 1,
+              alignItems: { xs: "stretch", md: "center" },
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2,
+              mb: 3,
             }}
           >
+            <Box>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 600, color: "#1e293b", mb: 0.5 }}
+              >
+                Leads
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#64748b" }}>
+                Manage your leads and customer information
+              </Typography>
+            </Box>
+
+            {/* Summary Statistics for Employees */}
+            {rows.length > 0 && <SummaryStats rows={rows} />}
+
+            {/* Search and New Lead Container */}
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: 1,
-                flexWrap: "wrap",
+                gap: 2,
+                minWidth: { xs: "100%", md: "auto" },
               }}
             >
-              <Typography
-                variant="body2"
-                color="primary"
-                sx={{ fontWeight: 500 }}
-              >
-                Active Filters:
-              </Typography>
-
-              {assignmentFilter !== "all" && (
-                <Chip
-                  label={`Assignment: ${
-                    assignmentFilter === "assigned" ? "Assigned" : "Unassigned"
-                  }`}
+              {/* Search Field */}
+              <Box sx={{ minWidth: { xs: "100%", md: "300px" } }}>
+                <TextField
                   size="small"
-                  color="primary"
-                  variant="outlined"
-                  onDelete={() => handleAssignmentFilterChange("all")}
+                  placeholder="Search leads by name, phone, address..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    width: "100%",
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "background.paper",
+                      "&:hover": {
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "primary.main",
+                        },
+                      },
+                    },
+                  }}
                 />
-              )}
+              </Box>
 
-              {statusFilter !== "all" && (
-                <Chip
-                  label={`Status: ${
-                    statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
-                  }`}
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  onDelete={() => handleStatusFilterChange("all")}
-                />
+              {/* New Lead Button */}
+              {canCreate("csv") && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleOpenNewLeadModal}
+                  sx={{
+                    backgroundColor: "success.main",
+                    "&:hover": {
+                      backgroundColor: "success.dark",
+                    },
+                    minWidth: "auto",
+                    px: 2,
+                    py: 1,
+                    height: "40px", // Match TextField height
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  New Lead
+                </Button>
               )}
             </Box>
 
-            <Button
-              size="small"
-              variant="text"
-              onClick={handleClearFilters}
-              startIcon={<ClearIcon />}
-              sx={{ color: "primary.main" }}
-            >
-              Clear All
-            </Button>
+            {/* Filter Button */}
           </Box>
-        )}
 
-        {/* Quick Filter Buttons */}
-        <Box
-          sx={{
-            mb: 2,
-            display: "flex",
-            gap: 1,
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-            Quick Filters:
-          </Typography>
-
-          <Button
-            size="small"
-            variant={
-              assignmentFilter === "unassigned" ? "contained" : "outlined"
-            }
-            onClick={() => handleAssignmentFilterChange("unassigned")}
-            sx={{ minWidth: "auto" }}
-          >
-            Unassigned
-          </Button>
-
-          <Button
-            size="small"
-            variant={assignmentFilter === "assigned" ? "contained" : "outlined"}
-            onClick={() => handleAssignmentFilterChange("assigned")}
-            sx={{ minWidth: "auto" }}
-          >
-            Assigned
-          </Button>
-
-          <Button
-            size="small"
-            variant={statusFilter === "new" ? "contained" : "outlined"}
-            onClick={() => handleStatusFilterChange("new")}
-            sx={{ minWidth: "auto" }}
-          >
-            New Leads
-          </Button>
-
-          {/* Filtered Export Button */}
+          {/* Filter Summary */}
           {hasActiveFilters && (
-            <Button
-              size="small"
-              variant="outlined"
-              color="success"
-              startIcon={<DownloadIcon />}
-              onClick={handleFilteredExport}
-              sx={{ minWidth: "auto" }}
+            <Box
+              sx={{
+                mb: 2,
+                p: 1.5,
+                background: "rgba(59, 130, 246, 0.05)",
+                border: "1px solid rgba(59, 130, 246, 0.2)",
+                borderRadius: 2,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 1,
+              }}
             >
-              Export Filtered
-            </Button>
-          )}
-        </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  flexWrap: "wrap",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  color="primary"
+                  sx={{ fontWeight: 500 }}
+                >
+                  Active Filters:
+                </Typography>
 
-        {/* Bulk Actions Bar */}
-        {selectedRows.length > 0 && (
-          <Box
-            sx={{
-              background: "rgba(59, 130, 246, 0.05)",
-              border: "1px solid rgba(59, 130, 246, 0.2)",
-              borderRadius: 2,
-              p: 2,
-              mb: 2,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip
-                label={`${selectedRows.length} selected`}
-                color="primary"
-                size="small"
-                sx={{ fontWeight: 600 }}
-              />
-              <Typography variant="body2" color="text.secondary">
-                Bulk actions available
-              </Typography>
+                {assignmentFilter !== "all" && (
+                  <Chip
+                    label={`Assignment: ${
+                      assignmentFilter === "assigned"
+                        ? "Assigned"
+                        : "Unassigned"
+                    }`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    onDelete={() => handleAssignmentFilterChange("all")}
+                  />
+                )}
+
+                {statusFilter !== "all" && (
+                  <Chip
+                    label={`Status: ${
+                      statusFilter.charAt(0).toUpperCase() +
+                      statusFilter.slice(1)
+                    }`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    onDelete={() => handleStatusFilterChange("all")}
+                  />
+                )}
+              </Box>
+
               <Button
                 size="small"
                 variant="text"
-                onClick={handleClearSelection}
-                sx={{
-                  minWidth: "auto",
-                  color: "text.secondary",
-                  "&:hover": {
-                    color: "text.primary",
-                  },
-                }}
+                onClick={handleClearFilters}
+                startIcon={<ClearIcon />}
+                sx={{ color: "primary.main" }}
               >
-                Clear
+                Clear All
               </Button>
-            </Stack>
+            </Box>
+          )}
 
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Tooltip title="Assign selected leads">
+          {/* Quick Filter Buttons */}
+          <Box
+            sx={{
+              mb: 2,
+              display: "flex",
+              gap: 1,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+              Quick Filters:
+            </Typography>
+
+            <Button
+              size="small"
+              variant={
+                assignmentFilter === "unassigned" ? "contained" : "outlined"
+              }
+              onClick={() => handleAssignmentFilterChange("unassigned")}
+              sx={{ minWidth: "auto" }}
+            >
+              Unassigned
+            </Button>
+
+            <Button
+              size="small"
+              variant={
+                assignmentFilter === "assigned" ? "contained" : "outlined"
+              }
+              onClick={() => handleAssignmentFilterChange("assigned")}
+              sx={{ minWidth: "auto" }}
+            >
+              Assigned
+            </Button>
+
+            <Button
+              size="small"
+              variant={statusFilter === "new" ? "contained" : "outlined"}
+              onClick={() => handleStatusFilterChange("new")}
+              sx={{ minWidth: "auto" }}
+            >
+              New Leads
+            </Button>
+
+            {/* Filtered Export Button */}
+            {hasActiveFilters && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="success"
+                startIcon={<DownloadIcon />}
+                onClick={handleFilteredExport}
+                sx={{ minWidth: "auto" }}
+              >
+                Export Filtered
+              </Button>
+            )}
+          </Box>
+
+          {/* Bulk Actions Bar */}
+          {canUseCsvMulti && selectedRows.length > 0 && (
+            <Box
+              sx={{
+                background: "rgba(59, 130, 246, 0.05)",
+                border: "1px solid rgba(59, 130, 246, 0.2)",
+                borderRadius: 2,
+                p: 2,
+                mb: 2,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  label={`${selectedRows.length} selected`}
+                  color="primary"
+                  size="small"
+                  sx={{ fontWeight: 600 }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Bulk actions available
+                </Typography>
                 <Button
                   size="small"
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={handleBulkAssign}
-                  sx={{ minWidth: "auto" }}
+                  variant="text"
+                  onClick={handleClearSelection}
+                  sx={{
+                    minWidth: "auto",
+                    color: "text.secondary",
+                    "&:hover": {
+                      color: "text.primary",
+                    },
+                  }}
                 >
-                  Assign
+                  Clear
                 </Button>
-              </Tooltip>
+              </Stack>
 
-              {/* <Tooltip title="Export selected leads">
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {canCreate("csv") && (
+                  <Tooltip title="Assign selected leads">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={handleBulkAssign}
+                      sx={{ minWidth: "auto" }}
+                    >
+                      Assign
+                    </Button>
+                  </Tooltip>
+                )}
+
+                {/* <Tooltip title="Export selected leads">
                 <Button
                   size="small"
                   variant="outlined"
@@ -1004,307 +1221,187 @@ const LeadsTable = () => {
                 </Button>
               </Tooltip> */}
 
-              <Tooltip title="Delete selected leads">
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="error"
-                  startIcon={<DeleteIcon />}
-                  onClick={handleBulkDelete}
-                  sx={{ minWidth: "auto" }}
-                >
-                  Delete
-                </Button>
-              </Tooltip>
-            </Stack>
-          </Box>
-        )}
-
-        {/* Selection Info */}
-        {selectedRows.length > 0 && (
-          <Box
-            sx={{
-              mb: 2,
-              p: 1.5,
-              background: "rgba(16, 185, 129, 0.05)",
-              border: "1px solid rgba(16, 185, 129, 0.2)",
-              borderRadius: 1,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography
-              variant="body2"
-              color="success.main"
-              sx={{ fontWeight: 500 }}
-            >
-              ✓ {selectedRows.length} lead{selectedRows.length !== 1 ? "s" : ""}{" "}
-              selected
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Use bulk actions above or press ESC to clear selection
-            </Typography>
-          </Box>
-        )}
-
-        {/* No Selection Info */}
-        {selectedRows.length === 0 && rows.length > 0 && (
-          <Box
-            sx={{
-              mb: 2,
-              p: 1.5,
-              background: "rgba(148, 163, 184, 0.05)",
-              border: "1px solid rgba(148, 163, 184, 0.2)",
-              borderRadius: 1,
-              textAlign: "center",
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              💡 Select leads using the checkboxes to perform bulk actions
-            </Typography>
-          </Box>
-        )}
-
-        <ModernTable
-          title="Leads Data"
-          subtitle={
-            hasActiveFilters
-              ? `${totalItems} leads found (filtered) • ${
-                  assignmentFilter !== "all"
-                    ? `${
-                        assignmentFilter === "assigned"
-                          ? "Assigned"
-                          : "Unassigned"
-                      } leads`
-                    : ""
-                } ${
-                  statusFilter !== "all"
-                    ? `• ${
-                        statusFilter.charAt(0).toUpperCase() +
-                        statusFilter.slice(1)
-                      } status`
-                    : ""
-                }`
-              : `${totalItems} total leads`
-          }
-          columns={columns}
-          data={rows}
-          loading={leadsLoading}
-          showActions={true}
-          emptyMessage={
-            hasActiveFilters
-              ? "No leads match the current filters. Try adjusting your filter criteria."
-              : "No leads found"
-          }
-          // Selection props
-          selectable={true}
-          selectedRows={selectedRows}
-          onSelectionChange={handleSelectionChange}
-          onSelectAll={handleSelectAll}
-          // Custom actions
-          customActions={true}
-          renderActions={(row) => (
-            <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
-              <Tooltip title="Assign lead">
-                <IconButton
-                  size="small"
-                  onClick={() => handleOpenAssignmentModal(row)}
-                  sx={{
-                    background: "rgba(16, 185, 129, 0.1)",
-                    color: "#10b981",
-                    "&:hover": {
-                      background: "rgba(16, 185, 129, 0.2)",
-                      transform: "scale(1.1)",
-                    },
-                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+                {canDelete("csv") && (
+                  <Tooltip title="Delete selected leads">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={handleBulkDelete}
+                      sx={{ minWidth: "auto" }}
+                    >
+                      Delete
+                    </Button>
+                  </Tooltip>
+                )}
+              </Stack>
             </Box>
           )}
-        />
 
-        {!leadsLoading && (
-          <DSPagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            limit={limit}
-            onLimitChange={handleLimitChange}
-            total={totalItems}
+          {/* Selection Info */}
+          {canUseCsvMulti && selectedRows.length > 0 && (
+            <Box
+              sx={{
+                mb: 2,
+                p: 1.5,
+                background: "rgba(16, 185, 129, 0.05)",
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+                borderRadius: 1,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="success.main"
+                sx={{ fontWeight: 500 }}
+              >
+                ✓ {selectedRows.length} lead
+                {selectedRows.length !== 1 ? "s" : ""} selected
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Use bulk actions above or press ESC to clear selection
+              </Typography>
+            </Box>
+          )}
+
+          {/* No Selection Info */}
+          {canUseCsvMulti && selectedRows.length === 0 && rows.length > 0 && (
+            <Box
+              sx={{
+                mb: 2,
+                p: 1.5,
+                background: "rgba(148, 163, 184, 0.05)",
+                border: "1px solid rgba(148, 163, 184, 0.2)",
+                borderRadius: 1,
+                textAlign: "center",
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                💡 Select leads using the checkboxes to perform bulk actions
+              </Typography>
+            </Box>
+          )}
+
+          <ModernTable
+            title="Leads Data"
+            subtitle={
+              hasActiveFilters
+                ? `${totalItems} leads found (filtered) • ${
+                    assignmentFilter !== "all"
+                      ? `${
+                          assignmentFilter === "assigned"
+                            ? "Assigned"
+                            : "Unassigned"
+                        } leads`
+                      : ""
+                  } ${
+                    statusFilter !== "all"
+                      ? `• ${
+                          statusFilter.charAt(0).toUpperCase() +
+                          statusFilter.slice(1)
+                        } status`
+                      : ""
+                  }`
+                : `${totalItems} total leads`
+            }
+            columns={columns}
+            data={rows}
+            loading={leadsLoading}
+            showActions={false}
+            emptyMessage={
+              hasActiveFilters
+                ? "No leads match the current filters. Try adjusting your filter criteria."
+                : "No leads found"
+            }
+            // Selection props
+            selectable={canUseCsvMulti}
+            selectedRows={selectedRows}
+            onSelectionChange={handleSelectionChange}
+            onSelectAll={handleSelectAll}
+            // Custom actions
+            customActions={true}
+            // renderActions={(row) => (
+            //   <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+            //     <Tooltip title="Assign lead">
+            //       <IconButton
+            //         size="small"
+            //         onClick={() => handleOpenAssignmentModal(row)}
+            //         sx={{
+            //           background: "rgba(16, 185, 129, 0.1)",
+            //           color: "#10b981",
+            //           "&:hover": {
+            //             background: "rgba(16, 185, 129, 0.2)",
+            //             transform: "scale(1.1)",
+            //           },
+            //           transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            //         }}
+            //       >
+            //         <EditIcon fontSize="small" />
+            //       </IconButton>
+            //     </Tooltip>
+            //   </Box>
+            // )}
+            // Custom row styling
+            getRowProps={(row) => getRowStyling(row)}
           />
-        )}
 
-        {/* Call History Dialog */}
-        {selectedLeadForHistory && (
-          <CallHistory
-            open={callHistoryOpen}
-            onClose={handleCloseCallHistory}
-            leadId={selectedLeadForHistory.id || selectedLeadForHistory._id}
-            leadName={selectedLeadForHistory.name}
-            phoneNumber={selectedLeadForHistory.phone}
-            callHistory={[
-              // Mock call history data - replace with actual API call
-              {
-                id: 1,
-                status: "completed",
-                timestamp: new Date(
-                  Date.now() - 24 * 60 * 60 * 1000
-                ).toISOString(),
-                duration: 180,
-                employeeName: "John Doe",
-                reason: "Follow up call",
-                notes: "Customer was interested in our services",
-              },
-              {
-                id: 2,
-                status: "missed",
-                timestamp: new Date(
-                  Date.now() - 2 * 24 * 60 * 60 * 1000
-                ).toISOString(),
-                duration: 0,
-                employeeName: "Jane Smith",
-                reason: "Initial contact",
-                notes: "No answer, left voicemail",
-              },
-            ]}
-            onNewCall={handleNewCallFromHistory}
+          {!leadsLoading && (
+            <DSPagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              limit={limit}
+              onLimitChange={handleLimitChange}
+              total={totalItems}
+            />
+          )}
+
+          {/* Call History Dialog */}
+          {selectedLeadForHistory && (
+            <CallHistory
+              open={callHistoryOpen}
+              onClose={handleCloseCallHistory}
+              leadId={selectedLeadForHistory.id || selectedLeadForHistory._id}
+              leadName={selectedLeadForHistory.name}
+              phoneNumber={selectedLeadForHistory.phone}
+              callHistory={selectedLeadForHistory}
+              onNewCall={handleNewCallFromHistory}
+            />
+          )}
+
+          {/* Assignment Modal */}
+          {selectedLeadForAssignment && (
+            <AssignmentModal
+              open={assignmentModalOpen}
+              setOpen={setAssignmentModalOpen}
+              lead={selectedLeadForAssignment}
+              onAssign={handleAssignment}
+            />
+          )}
+
+          {/* New Lead Modal */}
+          <NewLeadModal open={newLeadModalOpen} setOpen={setNewLeadModalOpen} />
+
+          {/* Lead Details Modal */}
+          <LeadDetailsModal
+            open={detailsModalOpen}
+            setOpen={setDetailsModalOpen}
+            lead={selectedLeadForDetails}
           />
-        )}
 
-        {/* Assignment Modal */}
-        {selectedLeadForAssignment && (
-          <AssignmentModal
-            open={assignmentModalOpen}
-            setOpen={setAssignmentModalOpen}
-            lead={selectedLeadForAssignment}
-            onAssign={handleAssignment}
+          {/* Add Follow Up Modal */}
+          <AddFollowUpModal
+            open={addFollowUpModalOpen}
+            setOpen={setAddFollowUpModalOpen}
+            lead={selectedLeadForFollowUp}
           />
-        )}
-
-        {/* New Lead Modal */}
-        <NewLeadModal open={newLeadModalOpen} setOpen={setNewLeadModalOpen} />
-
-        {/* Lead Details Modal */}
-        <LeadDetailsModal
-          open={detailsModalOpen}
-          setOpen={setDetailsModalOpen}
-          lead={selectedLeadForDetails}
-        />
-
-        {/* Add Follow Up Modal */}
-        <AddFollowUpModal
-          open={addFollowUpModalOpen}
-          setOpen={setAddFollowUpModalOpen}
-          lead={selectedLeadForFollowUp}
-        />
-      </Box>
-    </ResponsiveContainer>
+        </Box>
+      </ResponsiveContainer>
+    </PhoneVisibilityProvider>
   );
 };
 
 export default LeadsTable;
-
-// {/* <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-//             <Tooltip title="Filter leads">
-//               <IconButton
-//                 onClick={handleFilterClick}
-//                 sx={{
-//                   backgroundColor: hasActiveFilters
-//                     ? "primary.main"
-//                     : "background.paper",
-//                   color: hasActiveFilters ? "white" : "text.primary",
-//                   border: "1px solid",
-//                   borderColor: hasActiveFilters ? "primary.main" : "divider",
-//                   "&:hover": {
-//                     backgroundColor: hasActiveFilters
-//                       ? "primary.dark"
-//                       : "action.hover",
-//                   },
-//                 }}
-//               >
-//                 <FilterIcon />
-//               </IconButton>
-//             </Tooltip>
-
-//             {/* Filter Menu */}
-//             <Menu
-//               anchorEl={filterAnchorEl}
-//               open={Boolean(filterAnchorEl)}
-//               onClose={handleFilterClose}
-//               PaperProps={{
-//                 sx: {
-//                   minWidth: 250,
-//                   mt: 1,
-//                   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-//                   border: "1px solid rgba(148, 163, 184, 0.2)",
-//                 },
-//               }}
-//             >
-//               <Box
-//                 sx={{
-//                   p: 2,
-//                   borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
-//                 }}
-//               >
-//                 <Typography
-//                   variant="subtitle2"
-//                   fontWeight={600}
-//                   color="text.primary"
-//                 >
-//                   Filter Leads
-//                 </Typography>
-//               </Box>
-
-//               <Box sx={{ p: 2 }}>
-//                 {/* Assignment Filter */}
-//                 <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-//                   <InputLabel>Assignment Status</InputLabel>
-//                   <Select
-//                     value={assignmentFilter}
-//                     label="Assignment Status"
-//                     onChange={(e) =>
-//                       handleAssignmentFilterChange(e.target.value)
-//                     }
-//                   >
-//                     <MenuItem value="all">All Leads</MenuItem>
-//                     <MenuItem value="assigned">Assigned Leads</MenuItem>
-//                     <MenuItem value="unassigned">Unassigned Leads</MenuItem>
-//                   </Select>
-//                 </FormControl>
-
-//                 {/* Status Filter */}
-//                 <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-//                   <InputLabel>Lead Status</InputLabel>
-//                   <Select
-//                     value={statusFilter}
-//                     label="Lead Status"
-//                     onChange={(e) => handleStatusFilterChange(e.target.value)}
-//                   >
-//                     <MenuItem value="all">All Statuses</MenuItem>
-//                     <MenuItem value="new">New Leads</MenuItem>
-//                     <MenuItem value="contacted">Contacted</MenuItem>
-//                     <MenuItem value="unqualified">Unqualified</MenuItem>
-//                     <MenuItem value="converted">Converted</MenuItem>
-//                     <MenuItem value="lost">Lost</MenuItem>
-//                   </Select>
-//                 </FormControl>
-
-//                 {/* Clear Filters Button */}
-//                 {hasActiveFilters && (
-//                   <Button
-//                     fullWidth
-//                     variant="outlined"
-//                     startIcon={<ClearIcon />}
-//                     onClick={handleClearFilters}
-//                     sx={{ mt: 1 }}
-//                   >
-//                     Clear All Filters
-//                   </Button>
-//                 )}
-//               </Box>
-//             </Menu>
-//           </Box> */}

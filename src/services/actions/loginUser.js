@@ -4,7 +4,6 @@ import { storeUserInfo } from "../auth.service";
 
 export const loginUser = async (payload) => {
   try {
-    console.log(payload);
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SHEBA_API_URL}/auth/login`,
       {
@@ -27,6 +26,6 @@ export const loginUser = async (payload) => {
 
     return user;
   } catch (error) {
-    console.log(error);
+    throw new Error(error?.message || "Something went wrong");
   }
 };

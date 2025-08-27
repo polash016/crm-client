@@ -24,10 +24,12 @@ const createRoleValidation = z.object({
     ),
   description: z.string().optional(),
   permissions: z
-    .array(z.object({
-      id: z.string().optional(),
-      name: z.string().optional(),
-    }))
+    .array(
+      z.object({
+        id: z.string().optional(),
+        name: z.string().optional(),
+      })
+    )
     .min(1, { message: "Please select at least one permission" })
     .refine((val) => val.length > 0, {
       message: "At least one permission must be selected",
@@ -40,15 +42,14 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
   const permissions = data?.data || [];
 
   const handleSubmit = async (values) => {
-    console.log("came here");
-    console.log(values);
     const res = createRole(JSON.stringify(values)).unwrap();
 
     toast.promise(res, {
       loading: "Creating...",
       success: (res) => {
         if (res?.data?.id) {
-          if (typeof onClose === "function") onClose(); else if (typeof setOpen === "function") setOpen(false);
+          if (typeof onClose === "function") onClose();
+          else if (typeof setOpen === "function") setOpen(false);
           if (typeof onSuccess === "function") onSuccess();
           return res?.message || "Role created successfully";
         } else {
@@ -56,7 +57,6 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
         }
       },
       error: (error) => {
-        console.log(error.message);
         return error?.message || "Something went wrong";
       },
     });
@@ -81,7 +81,6 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
         >
           <Box
             sx={{
-            
               borderRadius: "16px",
               background: "rgba(255, 255, 255, 0.2)",
               display: "flex",
@@ -118,9 +117,9 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
       }
       fullWidth={true}
       width="60vw"
-      sx={{ 
-        height: "full", 
-        width: "100%", 
+      sx={{
+        height: "full",
+        width: "100%",
         mx: "auto",
         "& .MuiDialog-paper": {
           borderRadius: "24px",
@@ -178,7 +177,8 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
                     width: 40,
                     height: 40,
                     borderRadius: "12px",
-                    background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+                    background:
+                      "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -231,10 +231,10 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
                   label="Enter role name (e.g., Admin, Manager, Employee)"
                   name="name"
                   sx={{
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                      backdropFilter: 'blur(8px)',
-                    }
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
                   }}
                 />
               </Box>
@@ -256,10 +256,10 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
                   label="Brief description of the role's responsibilities"
                   name="description"
                   sx={{
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                      backdropFilter: 'blur(8px)',
-                    }
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      backdropFilter: "blur(8px)",
+                    },
                   }}
                 />
               </Box>
@@ -303,7 +303,8 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
                     width: 40,
                     height: 40,
                     borderRadius: "12px",
-                    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                    background:
+                      "linear-gradient(135deg, #10b981 0%, #059669 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -363,8 +364,6 @@ const RoleCreateModal = ({ open, setOpen, onClose, onSuccess }) => {
             pt: 0,
           }}
         >
-          
-          
           <DSSubmitButton
             type="submit"
             isLoading={isCreating}

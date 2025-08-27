@@ -2,11 +2,11 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import PeopleIcon from "@mui/icons-material/People";
 import ProductionQuantityLimitsIcon from "@mui/icons-material/ProductionQuantityLimits";
+import PersonIcon from "@mui/icons-material/Person";
 
 export const drawerItems = (permissions) => {
   // Validate permissions input
   if (!permissions || !Array.isArray(permissions)) {
-    console.warn('drawerItems: permissions must be an array, received:', permissions);
     permissions = [];
   }
 
@@ -60,17 +60,17 @@ export const drawerItems = (permissions) => {
   };
 
   const roleMenues = [];
-  
+
   // Safely extract permission names
   const permissionSet = new Set();
   try {
     permissions.forEach((permission) => {
-      if (permission && typeof permission === 'object' && permission.name) {
+      if (permission && typeof permission === "object" && permission.name) {
         permissionSet.add(permission.name);
       }
     });
   } catch (error) {
-    console.error('Error processing permissions:', error);
+    throw new Error(error?.message || "Something went wrong");
   }
 
   roleMenues.push({
@@ -78,6 +78,13 @@ export const drawerItems = (permissions) => {
     path: "dashboard",
     icon: DashboardIcon,
   });
+
+  // Add Profile menu item for all users
+  // roleMenues.push({
+  //   title: "Profile",
+  //   path: "profile",
+  //   icon: PersonIcon,
+  // });
 
   const menuTitles = new Set(Object.values(permissionMap));
   menuTitles.forEach((menuTitle) => {
@@ -105,6 +112,8 @@ const getIcon = (title) => {
   switch (title) {
     case "Dashboard":
       return DashboardIcon;
+    case "Profile":
+      return PersonIcon;
     case "Order Management":
     case "Cour. & Delivery":
     case "Category":
@@ -148,11 +157,9 @@ const getChildItems = (title, permissionSet) => {
         : null,
     ],
     Leads: [
-      permissionSet.has("manage_leads") ||
-      permissionSet.has("view_lead")
+      permissionSet.has("manage_leads") || permissionSet.has("view_lead")
         ? { title: "Leads", path: "leads" }
         : null,
-    
     ],
     Brand: [{ title: "Brands", path: "brands" }],
     "Manage Product": [
@@ -182,7 +189,7 @@ const getChildItems = (title, permissionSet) => {
       // { title: "Landing Pages", path: "pages/landing" },
       // { title: "Templates Demo", path: "pages/landing/demo" },
     ],
-    "Blogs": [
+    Blogs: [
       { title: "All Blogs", path: "blogs" },
       { title: "Add Blog", path: "blogs/add" },
     ],
@@ -190,7 +197,7 @@ const getChildItems = (title, permissionSet) => {
       { title: "All Categories", path: "blog-categories" },
       { title: "Add Category", path: "blog-categories/add" },
     ],
-    "Inventory": [
+    Inventory: [
       { title: "All Inventory", path: "inventory" },
       { title: "Add Inventory", path: "inventory/add" },
     ],
@@ -198,5 +205,8 @@ const getChildItems = (title, permissionSet) => {
 
   // Get the items for this title and filter out null values
   const items = childItems[title] || [];
-  return items.filter(item => item !== null && typeof item === 'object' && item.title && item.path);
+  return items.filter(
+    (item) =>
+      item !== null && typeof item === "object" && item.title && item.path
+  );
 };

@@ -133,7 +133,6 @@ const AddProductModal = ({ open, setOpen }) => {
 
   const handleSubmit = (data) => {
     const formData = new FormData();
-    console.log(data);
 
     const { coverImg, files, ...rest } = data;
 
@@ -150,7 +149,6 @@ const AddProductModal = ({ open, setOpen }) => {
       });
     }
 
-    console.log(data);
     const res = createProduct(formData).unwrap();
 
     toast.promise(res, {
@@ -165,7 +163,6 @@ const AddProductModal = ({ open, setOpen }) => {
         }
       },
       error: (error) => {
-        console.log(error.message);
         return error?.message || "Something went wrong";
       },
     });
@@ -181,7 +178,8 @@ const AddProductModal = ({ open, setOpen }) => {
       }
       fullWidth={true}
       width="90vw"
-      sx={{ width: "100%", mx: "auto", height: "full" }}>
+      sx={{ width: "100%", mx: "auto", height: "full" }}
+    >
       <DSForm
         onSubmit={handleSubmit}
         resolver={zodResolver(createProductSchema)}
@@ -212,7 +210,8 @@ const AddProductModal = ({ open, setOpen }) => {
             description: "",
           },
         }}
-        className="space-y-8">
+        className="space-y-8"
+      >
         <div className="space-y-8">
           {/* Product Information Section */}
           <div className="rounded-2xl border border-white/20 shadow-sm p-6">
@@ -254,7 +253,8 @@ const AddProductModal = ({ open, setOpen }) => {
           <div className="flex justify-center pt-6">
             <button
               type="submit"
-              className="inline-flex items-center cursor-pointer gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border-0">
+              className="inline-flex items-center cursor-pointer gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border-0"
+            >
               Publish
             </button>
           </div>

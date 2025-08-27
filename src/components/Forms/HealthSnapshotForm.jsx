@@ -11,6 +11,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import DSForm from "./DSForm";
 import DynamicMetricsInput from "./DynamicMetricsInput";
+import { toast } from "sonner";
 
 const HealthSnapshotForm = ({
   onSubmit,
@@ -52,10 +53,17 @@ const HealthSnapshotForm = ({
         // metrics is already processed by DynamicMetricsInput
       };
 
-      await onSubmit(processedData);
+      const res = onSubmit(processedData).unwrap();
+      toast.promise(res, {
+        loading: "Saving...",
+        success: (res) => {
+          return res?.message || "Health snapshot saved successfully";
+        },
+        error: (error) => error?.message || "Something went wrong",
+      });
       reset();
     } catch (error) {
-      console.error("Form submission error:", error);
+      toast.error(error?.message || "Something went wrong");
     }
   };
 

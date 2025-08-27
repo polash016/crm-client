@@ -23,8 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 // import { toast } from "sonner";
 
 const validation = z.object({
-  id: z
-      .string({ required_error: "Id is Required" }),
+  id: z.string({ required_error: "Id is Required" }),
   password: z
     .string({ required_error: "Password is required" })
     .min(6, "Must be at least 6 characters"),
@@ -48,8 +47,6 @@ const LoginForm = () => {
       id: data.id,
       password: data.password,
     };
-
-    console.log("User credentials being sent:", userCredentials);
 
     try {
       toast.loading("Logging in...");
@@ -215,7 +212,6 @@ const LoginForm = () => {
                   type={isEyeOpen ? "text" : "password"}
                   placeholder={"Enter your password"}
                   fullWidth={true}
-                 
                 />
               </Box>
 
@@ -290,7 +286,6 @@ const LoginForm = () => {
                   "Sign In"
                 )}
               </Button>
-              
             </Box>
           </DSForm>
         </CardContent>

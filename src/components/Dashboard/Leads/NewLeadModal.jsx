@@ -49,66 +49,50 @@ const NewLeadModal = ({ open, setOpen }) => {
 
   // Handle sample CSV download
   const handleDownloadSampleCSV = () => {
-    const sampleData = [
-      {
-        name: "John Doe",
-        phone: "+1234567890",
-        address: "123 Main St, City, State 12345",
-        source: "Website",
-        items: ["1 x D B C"],
-        price: 100,
-      },
-      {
-        name: "Jane Smith",
-        phone: "+1987654321",
-        address: "456 Oak Ave, Town, State 67890",
-        source: "Referral",
-        items: ["1 x D B C"],
-        price: 100,
-      },
-      {
-        name: "Mike Johnson",
-        phone: "+1555666777",
-        address: "789 Pine Rd, Village, State 11111",
-        source: "Phone Call",
-        items: ["1 x D B C"],
-        price: 100,
-      },
+    // Create empty CSV with just headers
+    const headers = [
+      "name",
+      "phone",
+      "address",
+      "source",
+      "items",
+      "price",
+      "date",
+      "orderDate",
     ];
-
-    // Convert to CSV format
-    const headers = Object.keys(sampleData[0]);
-    const csvContent = [
-      headers.join(","),
-      ...sampleData.map((row) =>
-        headers
-          .map((header) => {
-            const value = row[header];
-            // Wrap in quotes if contains comma or newline
-            return value.includes(",") || value.includes("\n")
-              ? `"${value}"`
-              : value;
-          })
-          .join(",")
-      ),
-    ].join("\n");
+    const csvContent = headers.join(",") + "\n";
 
     // Create and download file
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sample_leads_template.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      // Set download attributes
+      a.href = url;
+      a.download = "sample_leads_template.csv";
+      a.style.display = "none";
+
+      // Append to body, click, and cleanup
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+      // Fallback for older browsers
+      const dataUri =
+        "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+      const link = document.createElement("a");
+      link.href = dataUri;
+      link.download = "sample_leads_template.csv";
+      link.click();
+    }
   };
 
   // Handle form submission
   const handleFormSubmit = async (data) => {
     try {
-      console.log("Form data:", data);
       const { csvFile, ...rest } = data;
       const formData = new FormData();
 
@@ -124,7 +108,6 @@ const NewLeadModal = ({ open, setOpen }) => {
       toast.promise(res, {
         loading: "Creating...",
         success: (res) => {
-          console.log("res", res);
           if (res?.data?.length > 0) {
             setOpen(false);
             return res?.message || "Lead created successfully";
@@ -138,7 +121,7 @@ const NewLeadModal = ({ open, setOpen }) => {
 
       // TODO: Show success toast and refresh leads list
     } catch (error) {
-      console.error("Error creating lead:", error);
+      toast.error(error?.message || "Something went wrong");
       // TODO: Show error toast
     }
   };

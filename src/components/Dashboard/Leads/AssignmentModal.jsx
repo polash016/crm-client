@@ -32,8 +32,6 @@ const AssignmentModal = ({ open, setOpen, lead, onAssign }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  console.log("lead", { lead, onAssign });
-
   // Check if this is a bulk assignment
   const isBulkAssignment = lead?.id === "bulk";
 
@@ -48,8 +46,6 @@ const AssignmentModal = ({ open, setOpen, lead, onAssign }) => {
   });
 
   const users = usersData?.data || [];
-
-  console.log("users", users);
 
   // Debounced search - send to backend
   useEffect(() => {
@@ -113,7 +109,6 @@ const AssignmentModal = ({ open, setOpen, lead, onAssign }) => {
       const roleName = role.name || role;
 
       if (typeof roleName !== "string") {
-        console.warn("Role is not a string:", role);
         return "default";
       }
 

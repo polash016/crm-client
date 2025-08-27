@@ -23,6 +23,7 @@ import {
   Visibility as ViewIcon,
   MoreVert as MoreIcon,
 } from "@mui/icons-material";
+import TableSkeleton from "./TableSkeleton";
 
 const ModernTable = ({
   columns,
@@ -172,12 +173,15 @@ const ModernTable = ({
 
   if (loading) {
     return (
-      <Box sx={{ p: 3, textAlign: "center" }}>
-        <LinearProgress sx={{ mb: 2 }} />
-        <Typography variant="body2" color="text.secondary">
-          Loading data...
-        </Typography>
-      </Box>
+      <TableSkeleton
+        rowCount={6}
+        columns={columns}
+        showSearch={false}
+        showFilters={false}
+        showBulkActions={false}
+        title={title}
+        subtitle="Loading data..."
+      />
     );
   }
 

@@ -1,96 +1,319 @@
 "use client";
+import React from "react";
+import {
+  Box,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Typography,
+} from "@mui/material";
 
 const TableSkeleton = ({
   rowCount = 5,
-  showImage = true,
+  columns = [],
+  title,
+  subtitle,
   showActions = true,
-  middleSection = null,
-  headerTitle = "Items",
+  selectable = false,
 }) => {
+  // Calculate total columns for colSpan
+  const totalColumns =
+    columns.length + (showActions ? 1 : 0) + (selectable ? 1 : 0);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Skeleton */}
-        <div className="mb-8 animate-pulse">
-          <div className="h-10 w-48 bg-slate-200 rounded-lg mb-3"></div>
-          <div className="h-6 w-96 bg-slate-200/70 rounded-lg"></div>
-        </div>
+    <Box
+      sx={{
+        background: "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(20px)",
+        border: "1px solid rgba(148, 163, 184, 0.2)",
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+        position: "relative",
+        width: "100%",
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "3px",
+          background:
+            "linear-gradient(90deg, #3b82f6 0%, #1d4ed8 50%, #3b82f6 100%)",
+        },
+      }}
+    >
+      {/* Table Header */}
+      {(title || subtitle) && (
+        <Box
+          sx={{
+            p: { xs: 2, sm: 3 },
+            borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
+            background: "rgba(59, 130, 246, 0.02)",
+          }}
+        >
+          {title && (
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                color: "#1e293b",
+                fontSize: { xs: "1rem", sm: "1.125rem" },
+                mb: subtitle ? 0.5 : 0,
+              }}
+            >
+              {title}
+            </Typography>
+          )}
+          {subtitle && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#64748b",
+                fontSize: { xs: "0.8rem", sm: "0.875rem" },
+              }}
+            >
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
+      )}
 
-        {/* Search and Button Skeleton */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="w-80 h-12 bg-slate-200 rounded-2xl animate-pulse"></div>
-          <div className="w-40 h-12 bg-slate-200 rounded-2xl animate-pulse"></div>
-        </div>
-
-        {/* Table Skeleton */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-sm overflow-hidden">
-          {/* Table Header */}
-          <div className="px-6 py-4 border-b border-slate-200/50">
-            <div className="flex items-center justify-between">
-              <div className="h-6 w-32 bg-slate-200 rounded-lg animate-pulse"></div>
-              <div className="h-6 w-24 bg-slate-200 rounded-lg animate-pulse"></div>
-            </div>
-          </div>
-
-          {/* Table Content */}
-          <div className="divide-y divide-slate-200/50">
-            {[...Array(rowCount)].map((_, index) => (
-              <div key={index} className="px-6 py-4 relative overflow-hidden">
-                <div className="flex items-center justify-between">
-                  {/* Item Details Skeleton */}
-                  <div className="flex items-center space-x-4 animate-pulse">
-                    <div className="w-12 h-12 bg-slate-200 rounded-xl"></div>
-                    <div>
-                      <div className="h-5 w-48 bg-slate-200 rounded-lg mb-2"></div>
-                      <div className="h-4 w-32 bg-slate-200/70 rounded-lg"></div>
-                    </div>
-                  </div>
-
-                  {/* Middle Section if provided */}
-                  {middleSection && (
-                    <div className="animate-pulse">
-                      {typeof middleSection === "function"
-                        ? middleSection()
-                        : middleSection}
-                    </div>
+      {/* Table Content */}
+      <Box
+        sx={{
+          overflow: "auto",
+          width: "100%",
+          maxWidth: "100%",
+        }}
+      >
+        <TableContainer
+          sx={{
+            minWidth: { xs: 600, sm: "auto" },
+            maxWidth: "100%",
+            mx: 0,
+          }}
+        >
+          <Table>
+            <TableHead>
+              <TableRow
+                sx={{
+                  background:
+                    "linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%)",
+                  "& th": {
+                    borderBottom: "2px solid rgba(148, 163, 184, 0.2)",
+                    background: "transparent",
+                    fontWeight: 600,
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                    color: "#475569",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    py: { xs: 1.5, sm: 2 },
+                    px: { xs: 1, sm: 2 },
+                    whiteSpace: "nowrap",
+                  },
+                }}
+              >
+                {/* Selection checkbox column */}
+                {selectable && (
+                  <TableCell
+                    align="center"
+                    sx={{
+                      width: 50,
+                      px: 1,
+                    }}
+                  >
+                    <Skeleton
+                      variant="rectangular"
+                      width={20}
+                      height={20}
+                      sx={{
+                        backgroundColor: "rgba(148, 163, 184, 0.3)",
+                        borderRadius: 1,
+                      }}
+                    />
+                  </TableCell>
+                )}
+                {columns.map((column, index) => (
+                  <TableCell
+                    key={column.id || index}
+                    align={column.align || "center"}
+                  >
+                    <Skeleton
+                      variant="text"
+                      width={
+                        column.label?.length ? column.label.length * 8 : 60
+                      }
+                      height={20}
+                      sx={{
+                        backgroundColor: "rgba(148, 163, 184, 0.3)",
+                      }}
+                    />
+                  </TableCell>
+                ))}
+                {showActions && (
+                  <TableCell
+                    align="center"
+                    sx={{ width: { xs: 120, sm: 140 } }}
+                  >
+                    <Skeleton
+                      variant="text"
+                      width={60}
+                      height={20}
+                      sx={{
+                        backgroundColor: "rgba(148, 163, 184, 0.3)",
+                      }}
+                    />
+                  </TableCell>
+                )}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...Array(rowCount)].map((_, rowIndex) => (
+                <TableRow
+                  key={rowIndex}
+                  sx={{
+                    background:
+                      rowIndex % 2 === 0
+                        ? "rgba(255, 255, 255, 0.5)"
+                        : "rgba(248, 250, 252, 0.5)",
+                    "& td": {
+                      borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
+                      py: { xs: 1.5, sm: 2 },
+                      px: { xs: 1, sm: 2 },
+                    },
+                  }}
+                >
+                  {/* Selection checkbox */}
+                  {selectable && (
+                    <TableCell align="center" sx={{ px: 1 }}>
+                      <Skeleton
+                        variant="rectangular"
+                        width={20}
+                        height={20}
+                        sx={{
+                          backgroundColor: "rgba(148, 163, 184, 0.2)",
+                          borderRadius: 1,
+                        }}
+                      />
+                    </TableCell>
                   )}
 
-                  {/* Image Section */}
-                  {showImage && (
-                    <div className="flex items-center space-x-2 animate-pulse">
-                      <div className="w-10 h-10 bg-slate-200 rounded-lg"></div>
-                      <div className="w-10 h-10 bg-slate-200 rounded-lg"></div>
-                    </div>
-                  )}
+                  {/* Column cells */}
+                  {columns.map((column, colIndex) => (
+                    <TableCell
+                      key={column.id || colIndex}
+                      align={column.align || "center"}
+                    >
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                      >
+                        {/* Avatar/Icon placeholder */}
+                        {(column.id === "leadInfo" ||
+                          column.id === "userInfo" ||
+                          column.id === "profile" ||
+                          column.label?.toLowerCase().includes("name")) && (
+                          <Skeleton
+                            variant="circular"
+                            width={32}
+                            height={32}
+                            sx={{
+                              backgroundColor: "rgba(148, 163, 184, 0.2)",
+                            }}
+                          />
+                        )}
 
-                  {/* Actions Section */}
+                        {/* Text content */}
+                        <Box sx={{ flex: 1 }}>
+                          <Skeleton
+                            variant="text"
+                            width={colIndex % 2 === 0 ? "80%" : "60%"}
+                            height={20}
+                            sx={{
+                              backgroundColor: "rgba(148, 163, 184, 0.2)",
+                              mb: 0.5,
+                            }}
+                          />
+                          {colIndex % 3 === 0 && (
+                            <Skeleton
+                              variant="text"
+                              width="40%"
+                              height={16}
+                              sx={{
+                                backgroundColor: "rgba(148, 163, 184, 0.15)",
+                              }}
+                            />
+                          )}
+                        </Box>
+
+                        {/* Status chips for certain columns */}
+                        {(column.id === "status" ||
+                          column.id === "priority" ||
+                          column.id === "role") && (
+                          <Skeleton
+                            variant="rectangular"
+                            width={60}
+                            height={24}
+                            sx={{
+                              backgroundColor: "rgba(148, 163, 184, 0.2)",
+                              borderRadius: 12,
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </TableCell>
+                  ))}
+
+                  {/* Actions column */}
                   {showActions && (
-                    <div className="flex items-center space-x-2 animate-pulse">
-                      <div className="w-8 h-8 bg-slate-200 rounded-lg"></div>
-                      <div className="w-8 h-8 bg-slate-200 rounded-lg"></div>
-                    </div>
+                    <TableCell align="center">
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          gap: 0.5,
+                        }}
+                      >
+                        <Skeleton
+                          variant="circular"
+                          width={32}
+                          height={32}
+                          sx={{
+                            backgroundColor: "rgba(59, 130, 246, 0.2)",
+                          }}
+                        />
+                        <Skeleton
+                          variant="circular"
+                          width={32}
+                          height={32}
+                          sx={{
+                            backgroundColor: "rgba(16, 185, 129, 0.2)",
+                          }}
+                        />
+                        {rowIndex % 2 === 0 && (
+                          <Skeleton
+                            variant="circular"
+                            width={32}
+                            height={32}
+                            sx={{
+                              backgroundColor: "rgba(239, 68, 68, 0.2)",
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </TableCell>
                   )}
-                </div>
-                {/* Shimmer Effect */}
-                <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white/30 to-70% opacity-40 animate-[shimmer_2s_infinite]"></div>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination Skeleton */}
-          <div className="px-6 py-4 border-t border-slate-200/50 bg-slate-50/30">
-            <div className="flex items-center justify-between animate-pulse">
-              <div className="h-5 w-72 bg-slate-200 rounded-lg"></div>
-              <div className="flex items-center space-x-2">
-                <div className="h-8 w-24 bg-slate-200 rounded-lg"></div>
-                <div className="h-8 w-8 bg-slate-200 rounded-lg"></div>
-                <div className="h-8 w-24 bg-slate-200 rounded-lg"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    </Box>
   );
 };
 
