@@ -14,20 +14,20 @@ export const buildColumns = ({
 }) => [
   {
     id: "leadInfo",
-    label: "Lead Information",
+    label: "Information",
     render: (row) => (
-      <Box sx={{ minWidth: 200 }}>
+      <Box sx={{ minWidth: 160 }}>
         <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
           {row?.name || "No Name"}
         </Typography>
-        <Typography
+        {/* <Typography
           variant="caption"
           color="text.secondary"
           sx={{ display: "block", mb: 0.5 }}
         >
           {row?.phone || "No Phone"}
-        </Typography>
-        {row?.address && (
+        </Typography> */}
+        {/* {row?.address && (
           <Typography
             variant="caption"
             color="text.secondary"
@@ -35,19 +35,21 @@ export const buildColumns = ({
           >
             📍{" "}
             {row.address.length > 50
-              ? `${row.address.substring(0, 50)}...`
+              ? `${row.address.substring(0, 25)}...`
               : row.address}
           </Typography>
-        )}
+        )} */}
       </Box>
     ),
   },
   {
     id: "status",
-    label: "Status & Priority",
+    label: "Priority",
     render: (row) => {
+      // Determine lead status based on follow-up data
       let status = "New";
       let statusColor = "default";
+      let statusTextColor = "default";
       let priority = "Normal";
       let priorityColor = "default";
 
@@ -56,6 +58,7 @@ export const buildColumns = ({
         if (lastFollowUp.outcome === "COMPLETED") {
           status = "Followed Up";
           statusColor = "success";
+          statusTextColor = "white";
         } else if (
           lastFollowUp.outcome === "NO_ANSWER" ||
           lastFollowUp.outcome === "BUSY"
@@ -65,12 +68,13 @@ export const buildColumns = ({
         }
       }
 
+      // Determine priority based on nextFollowUpAt
       if (row?.nextFollowUpAt) {
         const followUpDate = new Date(row.nextFollowUpAt);
         const now = new Date();
-        const daysDiff = Math.ceil(
-          (followUpDate.getTime() - now.getTime()) / (1000 * 3600 * 24)
-        );
+        const timeDiff = followUpDate.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
         if (daysDiff < 0) {
           priority = "Urgent";
           priorityColor = "error";
@@ -84,12 +88,19 @@ export const buildColumns = ({
       }
 
       return (
-        <Box sx={{ textAlign: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 0.5,
+          }}
+        >
           <Chip
             label={status}
             size="small"
             color={statusColor}
-            sx={{ mb: 1, fontSize: "0.7rem" }}
+            sx={{ fontSize: "0.7rem", color: statusTextColor }}
           />
           <Chip
             label={priority}
@@ -104,7 +115,7 @@ export const buildColumns = ({
   },
   {
     id: "followUpStatus",
-    label: "Follow Up Status",
+    label: "Status",
     render: (row) => {
       if (!row?.nextFollowUpAt) {
         return (
@@ -119,14 +130,16 @@ export const buildColumns = ({
           </Box>
         );
       }
+
       const followUpDate = new Date(row.nextFollowUpAt);
       const now = new Date();
-      const daysDiff = Math.ceil(
-        (followUpDate.getTime() - now.getTime()) / (1000 * 3600 * 24)
-      );
+      const timeDiff = followUpDate.getTime() - now.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
       let statusText = "";
       let statusColor = "";
       let urgencyIcon = "";
+
       if (daysDiff < 0) {
         statusText = `${Math.abs(daysDiff)} days overdue`;
         statusColor = "#dc2626";
@@ -144,6 +157,7 @@ export const buildColumns = ({
         statusColor = "#059669";
         urgencyIcon = "📋";
       }
+
       return (
         <Box sx={{ textAlign: "center" }}>
           <Typography
@@ -177,11 +191,14 @@ export const buildColumns = ({
   },
   {
     id: "lastActivity",
-    label: "Last Activity",
+    label: "Activity",
     render: (row) => {
+      // Get the most recent activity (follow-up or call)
       let lastActivity = null;
       let activityType = "";
       let activityDate = null;
+
+      // Check for last follow-up
       if (row?.leadFollowUp && row.leadFollowUp.length > 0) {
         const lastFollowUp = row.leadFollowUp[row.leadFollowUp.length - 1];
         if (lastFollowUp.attemptedAt) {
@@ -190,6 +207,8 @@ export const buildColumns = ({
           activityDate = new Date(lastFollowUp.attemptedAt);
         }
       }
+
+      // Check for last call (if more recent)
       if (row?.callLog && row.callLog.length > 0) {
         const lastCall = row.callLog[row.callLog.length - 1];
         if (lastCall.createdAt) {
@@ -201,6 +220,7 @@ export const buildColumns = ({
           }
         }
       }
+
       if (!lastActivity) {
         return (
           <Typography variant="body2" color="text.secondary">
@@ -208,45 +228,97 @@ export const buildColumns = ({
           </Typography>
         );
       }
+
       const timeAgo = getTimeAgo(activityDate);
+
       return (
         <Box sx={{ minWidth: 150 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-            {activityType}: {lastActivity.reason || "No reason"}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {timeAgo}
-          </Typography>
-          {lastActivity.outcome && (
-            <Chip
-              label={lastActivity.outcome}
-              size="small"
-              color={getOutcomeColor(lastActivity.outcome)}
-              sx={{ mt: 0.5, fontSize: "0.6rem", height: "20px" }}
-            />
-          )}
+          {/* Line 1: Type + Reason + TimeAgo */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              mb: 0.5,
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {activityType}:{" "}
+              {row?.callLog[0]?.reason.slice(0, 15) || "No reason"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {timeAgo}
+            </Typography>
+          </Box>
+
+          {/* Line 2: Outcome + Note (truncated) */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              overflow: "hidden",
+            }}
+          >
+            {row?.leadFollowUp[0]?.note && (
+              <Tooltip
+                title={row.leadFollowUp[0].note}
+                placement="top"
+                arrow
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      fontSize: ".9rem",
+                    },
+                  },
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                  // sx={{ flex: 1, minWidth: 0 }}
+                >
+                  Note: {row.leadFollowUp[0].note.slice(0, 20)}
+                </Typography>
+              </Tooltip>
+            )}
+
+            {lastActivity.outcome && (
+              <Chip
+                label={lastActivity.outcome}
+                size="small"
+                color={getOutcomeColor(lastActivity.outcome)}
+                sx={{ fontSize: "0.6rem", height: "20px", color: "white" }}
+              />
+            )}
+          </Box>
         </Box>
       );
     },
   },
   {
     id: "nextAction",
-    label: "Next Action Needed",
+    label: "Next Action",
     render: (row) => {
       let actionText = "";
       let actionColor = "";
       let actionIcon = "";
+
       if (!row?.nextFollowUpAt) {
         actionText = "Schedule follow-up";
         actionColor = "warning";
         actionIcon = "📅";
       } else {
         const followUpDate = new Date(row.nextFollowUpAt);
-        const daysDiff = Math.ceil(
-          (followUpDate.getTime() - Date.now()) / (1000 * 3600 * 24)
-        );
+        const now = new Date();
+        const timeDiff = followUpDate.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
         if (daysDiff < 0) {
-          actionText = "Immediate follow-up needed";
+          actionText = "Immediate follow-up";
           actionColor = "error";
           actionIcon = "🚨";
         } else if (daysDiff === 0) {
@@ -263,18 +335,20 @@ export const buildColumns = ({
           actionIcon = "✅";
         }
       }
+
       return (
         <Box sx={{ textAlign: "center", minWidth: 120 }}>
           <Typography
             variant="body2"
             sx={{
-              fontWeight: 600,
+              fontWeight: 500,
               color: `${actionColor}.main`,
               mb: 0.5,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 0.5,
+              gap: 0,
+              fontSize: "0.8rem",
             }}
           >
             {actionIcon} {actionText}
@@ -300,19 +374,28 @@ export const buildColumns = ({
         const firstName = row.user.profile.firstName || "";
         const lastName = row.user.profile.lastName || "";
         const fullName = `${firstName} ${lastName}`.trim();
+
         if (fullName) {
           return (
             <Box sx={{ textAlign: "center" }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, mb: 0.5, fontSize: "0.8rem" }}
+              >
                 {fullName}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: "0.7rem" }}
+              >
                 {row.user.userType}
               </Typography>
             </Box>
           );
         }
       }
+
       if (row?.assignedToId) {
         return (
           <Box sx={{ textAlign: "center" }}>
@@ -326,6 +409,7 @@ export const buildColumns = ({
           </Box>
         );
       }
+
       return (
         <Chip
           label="Unassigned"
@@ -345,10 +429,11 @@ export const buildColumns = ({
         sx={{
           display: "flex",
           justifyContent: "center",
-          gap: 1,
+          gap: 0.5,
           flexWrap: "wrap",
         }}
       >
+        {/* Call Button */}
         <SecurePhone
           phoneNumber={row?.phone}
           onCall={(callData) => handleCallLog(row, callData)}
@@ -357,6 +442,8 @@ export const buildColumns = ({
           phoneId={`lead-${row?.id || row?._id}-phone`}
           row={row}
         />
+
+        {/* Call History */}
         <Tooltip title="View call history">
           <IconButton
             size="small"
@@ -375,6 +462,8 @@ export const buildColumns = ({
             <HistoryIcon fontSize="small" />
           </IconButton>
         </Tooltip>
+
+        {/* Add Follow Up */}
         <Tooltip title="Add Follow Up">
           <IconButton
             size="small"
@@ -392,6 +481,8 @@ export const buildColumns = ({
             <AddIcon fontSize="small" />
           </IconButton>
         </Tooltip>
+
+        {/* View Details */}
         <Tooltip title="View lead details">
           <IconButton
             size="small"

@@ -89,13 +89,13 @@ const ProfileUpdateModal = ({ open, setOpen, onClose, profile, onSuccess }) => {
         onSubmit={handleSubmit}
         defaultValues={{
           user: {
-            firstName: profile?.employee?.firstName || "",
-            lastName: profile?.employee?.lastName || "",
+            firstName: profile?.profile?.firstName || "",
+            lastName: profile?.profile?.lastName || "",
             email: profile?.email || "",
             profileImg: null,
-            nationalId: profile?.employee?.nationalId || "",
-            contactNumber: profile?.employee?.contactNumber || "",
-            address: profile?.employee?.address || "",
+            nationalId: profile?.profile?.nationalId || "",
+            contactNumber: profile?.profile?.contactNumber || "",
+            address: profile?.profile?.address || "",
           },
         }}
         sx={{ "& > *": { mb: 4 } }}

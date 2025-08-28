@@ -28,6 +28,15 @@ const leadsApi = baseApi.injectEndpoints({
       invalidatesTags: ["leads"],
     }),
 
+    createLead: build.mutation({
+      query: (data) => ({
+        url: "/leads",
+        method: "POST",
+        data,
+      }),
+      invalidatesTags: ["leads"],
+    }),
+
     updateLeads: build.mutation({
       query: ({ id, data }) => ({
         url: `/leads/${id}`,
@@ -92,6 +101,7 @@ export const {
   useGetLeadsQuery,
   useGetLeadsByIdQuery,
   useCreateLeadsMutation,
+  useCreateLeadMutation,
   useUpdateLeadsMutation,
   useDeleteLeadsMutation,
   useAssignOrderMutation,

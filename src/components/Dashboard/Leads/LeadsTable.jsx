@@ -9,20 +9,13 @@ import {
   Chip,
   Stack,
   Tooltip,
-  IconButton,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Download as DownloadIcon,
-  Email as EmailIcon,
-  Security as SecurityIcon,
-  History as HistoryIcon,
-  FilterList as FilterIcon,
   Clear as ClearIcon,
   Add as AddIcon,
-  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import {
   useBulkDeleteLeadsMutation,
@@ -34,15 +27,17 @@ import {
 } from "@/redux/api/leadsApi";
 import { useDebounced } from "@/redux/hooks";
 import ModernTable from "@/components/Shared/ModernTable";
-import { getOutcomeColor, getRowStyling, getTimeAgo } from "./LeadTable/utils";
+import { getRowStyling } from "./LeadTable/utils";
+import { buildColumns } from "./LeadTable/columns";
 import ResponsiveContainer from "@/components/Shared/ResponsiveContainer";
 import DSPagination from "@/components/Dashboard/pagination/DSPagination";
-import SecurePhone from "@/components/Shared/SecurePhone";
 import CallHistory from "@/components/Shared/CallHistory";
 import AssignmentModal from "./AssignmentModal";
 import NewLeadModal from "./NewLeadModal";
+import CreateLeadModal from "./CreateLeadModal";
 import LeadDetailsModal from "./LeadDetailsModal";
 import AddFollowUpModal from "./AddFollowUpModal";
+import LeadFilters from "./LeadFilters";
 import { PhoneVisibilityProvider } from "@/contexts/PhoneVisibilityContext";
 import { toast } from "sonner";
 import SummaryStats from "./LeadTable/SummaryStats";
@@ -52,17 +47,18 @@ const LeadsTable = () => {
   const { canCreate, canDelete, hasAnyPermission } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(30);
+  const [limit, setLimit] = useState(5);
   const [selectedRows, setSelectedRows] = useState([]);
   const [callHistoryOpen, setCallHistoryOpen] = useState(false);
   const [selectedLeadForHistory, setSelectedLeadForHistory] = useState(null);
-  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
-  const [assignmentFilter, setAssignmentFilter] = useState("all"); // all, assigned, unassigned
-  const [statusFilter, setStatusFilter] = useState("all"); // all, active, inactive, etc.
+  const [assignmentFilter, setAssignmentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [userFilter, setUserFilter] = useState("");
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedLeadForAssignment, setSelectedLeadForAssignment] =
     useState(null);
   const [newLeadModalOpen, setNewLeadModalOpen] = useState(false);
+  const [createLeadModalOpen, setCreateLeadModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
   const [addFollowUpModalOpen, setAddFollowUpModalOpen] = useState(false);
@@ -108,6 +104,12 @@ const LeadsTable = () => {
   if (statusFilter !== "all") {
     query["statusFilter"] = statusFilter;
   }
+
+  if (userFilter) {
+    query["userFilter"] = userFilter;
+  }
+
+  console.log({ userFilter });
 
   query["page"] = page;
   query["limit"] = limit;
@@ -169,22 +171,22 @@ const LeadsTable = () => {
     });
   };
 
-  const handleBulkExport = () => {
-    if (selectedRows.length === 0) return;
+  // const handleBulkExport = () => {
+  //   if (selectedRows.length === 0) return;
 
-    const exportPromise = (async () => {
-      // TODO: Implement actual bulk export API call
+  //   const exportPromise = (async () => {
+  //     // TODO: Implement actual bulk export API call
 
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
-    })();
+  //     // Simulate API call delay
+  //     await new Promise((resolve) => setTimeout(resolve, 800));
+  //   })();
 
-    toast.promise(exportPromise, {
-      loading: `Exporting ${selectedRows.length} leads...`,
-      success: `Exported ${selectedRows.length} leads successfully!`,
-      error: "Failed to export leads. Please try again.",
-    });
-  };
+  //   toast.promise(exportPromise, {
+  //     loading: `Exporting ${selectedRows.length} leads...`,
+  //     success: `Exported ${selectedRows.length} leads successfully!`,
+  //     error: "Failed to export leads. Please try again.",
+  //   });
+  // };
 
   const handleFilteredExport = () => {
     const exportPromise = (async () => {
@@ -241,32 +243,11 @@ const LeadsTable = () => {
     setDetailsModalOpen(true);
   };
 
-  // const handleCloseDetailsModal = () => {
-  //   setDetailsModalOpen(false);
-  //   setSelectedLeadForDetails(null);
-  // };
-
   // Add Follow Up modal handlers
   const handleOpenAddFollowUpModal = (lead) => {
     setSelectedLeadForFollowUp(lead);
     setAddFollowUpModalOpen(true);
   };
-
-  // const handleCloseAddFollowUpModal = () => {
-  //   setAddFollowUpModalOpen(false);
-  //   setSelectedLeadForFollowUp(null);
-  // };
-
-  const handleNewCallFromHistory = (callData) => {
-    // This will trigger a new call from the call history
-    // You could implement additional logic here
-  };
-
-  // Assignment handlers
-  // const handleOpenAssignmentModal = (lead) => {
-  //   setSelectedLeadForAssignment(lead);
-  //   setAssignmentModalOpen(true);
-  // };
 
   const handleCloseAssignmentModal = () => {
     setAssignmentModalOpen(false);
@@ -372,11 +353,6 @@ const LeadsTable = () => {
     setAssignmentModalOpen(true);
   };
 
-  // Filter handlers
-  // const handleFilterClick = (event) => {
-  //   setFilterAnchorEl(event.currentTarget);
-  // };
-
   const handleFilterClose = () => {
     setFilterAnchorEl(null);
   };
@@ -385,14 +361,18 @@ const LeadsTable = () => {
     setAssignmentFilter(value);
     setPage(1); // Reset to first page when filter changes
     setSelectedRows([]); // Clear selection when filter changes
-    handleFilterClose();
   };
 
   const handleStatusFilterChange = (value) => {
     setStatusFilter(value);
     setPage(1); // Reset to first page when filter changes
     setSelectedRows([]); // Clear selection when filter changes
-    handleFilterClose();
+  };
+
+  const handleUserFilterChange = (value) => {
+    setUserFilter(value);
+    setPage(1); // Reset to first page when filter changes
+    setSelectedRows([]); // Clear selection when filter changes
   };
 
   const handleClearFilters = () => {
@@ -408,6 +388,7 @@ const LeadsTable = () => {
 
     setAssignmentFilter("all");
     setStatusFilter("all");
+    setUserFilter("");
     setPage(1); // Reset to first page when filters are cleared
     setSelectedRows([]); // Clear selection when filters are cleared
 
@@ -415,503 +396,24 @@ const LeadsTable = () => {
     toast.success("All filters cleared successfully!");
   };
 
-  const hasActiveFilters = assignmentFilter !== "all" || statusFilter !== "all";
-
-  const handleBulkEdit = () => {
-    if (selectedRows.length === 0) return;
-
-    toast.info("Bulk edit functionality coming soon!");
-  };
+  const hasActiveFilters =
+    assignmentFilter !== "all" || statusFilter !== "all" || !!userFilter;
 
   // New Lead handlers
   const handleOpenNewLeadModal = () => {
     setNewLeadModalOpen(true);
   };
 
-  const handleCloseNewLeadModal = () => {
-    setNewLeadModalOpen(false);
+  const handleOpenCreateLeadModal = () => {
+    setCreateLeadModalOpen(true);
   };
 
-  const columns = [
-    {
-      id: "leadInfo",
-      label: "Information",
-      render: (row) => (
-        <Box sx={{ minWidth: 160 }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-            {row?.name || "No Name"}
-          </Typography>
-          {/* <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: "block", mb: 0.5 }}
-          >
-            {row?.phone || "No Phone"}
-          </Typography> */}
-          {row?.address && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: "block" }}
-            >
-              📍{" "}
-              {row.address.length > 50
-                ? `${row.address.substring(0, 25)}...`
-                : row.address}
-            </Typography>
-          )}
-        </Box>
-      ),
-    },
-    {
-      id: "status",
-      label: "Priority",
-      render: (row) => {
-        // Determine lead status based on follow-up data
-        let status = "New";
-        let statusColor = "default";
-        let statusTextColor = "default";
-        let priority = "Normal";
-        let priorityColor = "default";
-
-        if (row?.leadFollowUp && row.leadFollowUp.length > 0) {
-          const lastFollowUp = row.leadFollowUp[row.leadFollowUp.length - 1];
-          if (lastFollowUp.outcome === "COMPLETED") {
-            status = "Followed Up";
-            statusColor = "success";
-            statusTextColor = "white";
-          } else if (
-            lastFollowUp.outcome === "NO_ANSWER" ||
-            lastFollowUp.outcome === "BUSY"
-          ) {
-            status = "Contact Attempted";
-            statusColor = "warning";
-          }
-        }
-
-        // Determine priority based on nextFollowUpAt
-        if (row?.nextFollowUpAt) {
-          const followUpDate = new Date(row.nextFollowUpAt);
-          const now = new Date();
-          const timeDiff = followUpDate.getTime() - now.getTime();
-          const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-          if (daysDiff < 0) {
-            priority = "Urgent";
-            priorityColor = "error";
-          } else if (daysDiff === 0) {
-            priority = "High";
-            priorityColor = "warning";
-          } else if (daysDiff <= 2) {
-            priority = "Medium";
-            priorityColor = "info";
-          }
-        }
-
-        return (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 0.5,
-            }}
-          >
-            <Chip
-              label={status}
-              size="small"
-              color={statusColor}
-              sx={{ fontSize: "0.7rem", color: statusTextColor }}
-            />
-            <Chip
-              label={priority}
-              size="small"
-              color={priorityColor}
-              variant="outlined"
-              sx={{ fontSize: "0.7rem" }}
-            />
-          </Box>
-        );
-      },
-    },
-    {
-      id: "followUpStatus",
-      label: "Status",
-      render: (row) => {
-        if (!row?.nextFollowUpAt) {
-          return (
-            <Box sx={{ textAlign: "center" }}>
-              <Chip
-                label="No Follow Up"
-                size="small"
-                color="default"
-                variant="outlined"
-                sx={{ fontSize: "0.7rem" }}
-              />
-            </Box>
-          );
-        }
-
-        const followUpDate = new Date(row.nextFollowUpAt);
-        const now = new Date();
-        const timeDiff = followUpDate.getTime() - now.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-        let statusText = "";
-        let statusColor = "";
-        let urgencyIcon = "";
-
-        if (daysDiff < 0) {
-          statusText = `${Math.abs(daysDiff)} days overdue`;
-          statusColor = "#dc2626";
-          urgencyIcon = "🚨";
-        } else if (daysDiff === 0) {
-          statusText = "Due today";
-          statusColor = "#ea580c";
-          urgencyIcon = "⚠️";
-        } else if (daysDiff === 1) {
-          statusText = "Due tomorrow";
-          statusColor = "#ca8a04";
-          urgencyIcon = "📅";
-        } else {
-          statusText = `${daysDiff} days left`;
-          statusColor = "#059669";
-          urgencyIcon = "📋";
-        }
-
-        return (
-          <Box sx={{ textAlign: "center" }}>
-            <Typography
-              variant="body2"
-              sx={{
-                fontWeight: 600,
-                color: statusColor,
-                mb: 0.5,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 0.5,
-              }}
-            >
-              {urgencyIcon} {statusText}
-            </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontSize: "0.7rem" }}
-            >
-              {followUpDate.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Typography>
-          </Box>
-        );
-      },
-    },
-    {
-      id: "lastActivity",
-      label: "Activity",
-      render: (row) => {
-        // Get the most recent activity (follow-up or call)
-        let lastActivity = null;
-        let activityType = "";
-        let activityDate = null;
-
-        // Check for last follow-up
-        if (row?.leadFollowUp && row.leadFollowUp.length > 0) {
-          const lastFollowUp = row.leadFollowUp[row.leadFollowUp.length - 1];
-          if (lastFollowUp.attemptedAt) {
-            lastActivity = lastFollowUp;
-            activityType = "Follow-up";
-            activityDate = new Date(lastFollowUp.attemptedAt);
-          }
-        }
-
-        // Check for last call (if more recent)
-        if (row?.callLog && row.callLog.length > 0) {
-          const lastCall = row.callLog[row.callLog.length - 1];
-          if (lastCall.createdAt) {
-            const callDate = new Date(lastCall.createdAt);
-            if (!activityDate || callDate > activityDate) {
-              lastActivity = lastCall;
-              activityType = "Call";
-              activityDate = callDate;
-            }
-          }
-        }
-
-        if (!lastActivity) {
-          return (
-            <Typography variant="body2" color="text.secondary">
-              No activity
-            </Typography>
-          );
-        }
-
-        const timeAgo = getTimeAgo(activityDate);
-
-        return (
-          <Box sx={{ minWidth: 150 }}>
-            {/* Line 1: Type + Reason + TimeAgo */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1,
-                mb: 0.5,
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {activityType}:{" "}
-                {row?.callLog[0]?.reason.slice(0, 15) || "No reason"}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {timeAgo}
-              </Typography>
-            </Box>
-
-            {/* Line 2: Outcome + Note (truncated) */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1,
-                overflow: "hidden",
-              }}
-            >
-              {row?.leadFollowUp[0]?.note && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  noWrap
-                  // sx={{ flex: 1, minWidth: 0 }}
-                >
-                  Note: {row.leadFollowUp[0].note}
-                </Typography>
-              )}
-
-              {lastActivity.outcome && (
-                <Chip
-                  label={lastActivity.outcome}
-                  size="small"
-                  color={getOutcomeColor(lastActivity.outcome)}
-                  sx={{ fontSize: "0.6rem", height: "20px", color: "white" }}
-                />
-              )}
-            </Box>
-          </Box>
-        );
-      },
-    },
-    {
-      id: "nextAction",
-      label: "Next Action",
-      render: (row) => {
-        let actionText = "";
-        let actionColor = "";
-        let actionIcon = "";
-
-        if (!row?.nextFollowUpAt) {
-          actionText = "Schedule follow-up";
-          actionColor = "warning";
-          actionIcon = "📅";
-        } else {
-          const followUpDate = new Date(row.nextFollowUpAt);
-          const now = new Date();
-          const timeDiff = followUpDate.getTime() - now.getTime();
-          const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-          if (daysDiff < 0) {
-            actionText = "Immediate follow-up";
-            actionColor = "error";
-            actionIcon = "🚨";
-          } else if (daysDiff === 0) {
-            actionText = "Follow up today";
-            actionColor = "warning";
-            actionIcon = "⚠️";
-          } else if (daysDiff <= 2) {
-            actionText = "Prepare for follow-up";
-            actionColor = "info";
-            actionIcon = "📋";
-          } else {
-            actionText = "Monitor progress";
-            actionColor = "success";
-            actionIcon = "✅";
-          }
-        }
-
-        return (
-          <Box sx={{ textAlign: "center", minWidth: 120 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                fontWeight: 500,
-                color: `${actionColor}.main`,
-                mb: 0.5,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 0,
-                fontSize: "0.8rem",
-              }}
-            >
-              {actionIcon} {actionText}
-            </Typography>
-            {row?.nextActionType && (
-              <Chip
-                label={row.nextActionType.replace(/_/g, " ")}
-                size="small"
-                color="primary"
-                variant="outlined"
-                sx={{ fontSize: "0.6rem", height: "20px" }}
-              />
-            )}
-          </Box>
-        );
-      },
-    },
-    {
-      id: "assignedTo",
-      label: "Assigned To",
-      render: (row) => {
-        if (row?.user && row.user.profile) {
-          const firstName = row.user.profile.firstName || "";
-          const lastName = row.user.profile.lastName || "";
-          const fullName = `${firstName} ${lastName}`.trim();
-
-          if (fullName) {
-            return (
-              <Box sx={{ textAlign: "center" }}>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 500, mb: 0.5, fontSize: "0.8rem" }}
-                >
-                  {fullName}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontSize: "0.7rem" }}
-                >
-                  {row.user.userType}
-                </Typography>
-              </Box>
-            );
-          }
-        }
-
-        if (row?.assignedToId) {
-          return (
-            <Box sx={{ textAlign: "center" }}>
-              <Chip
-                label="Assigned"
-                size="small"
-                color="success"
-                variant="outlined"
-                sx={{ fontSize: "0.7rem" }}
-              />
-            </Box>
-          );
-        }
-
-        return (
-          <Chip
-            label="Unassigned"
-            size="small"
-            color="warning"
-            variant="outlined"
-            sx={{ fontSize: "0.7rem" }}
-          />
-        );
-      },
-    },
-    {
-      id: "actions",
-      label: "Actions",
-      render: (row) => (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 0.5,
-            flexWrap: "wrap",
-          }}
-        >
-          {/* Call Button */}
-          <SecurePhone
-            phoneNumber={row?.phone}
-            onCall={(callData) => handleCallLog(row, callData)}
-            variant="compact"
-            userRole="employee"
-            phoneId={`lead-${row?.id || row?._id}-phone`}
-            row={row}
-          />
-
-          {/* Call History */}
-          <Tooltip title="View call history">
-            <IconButton
-              size="small"
-              onClick={() => handleOpenCallHistory(row)}
-              sx={{
-                p: 0.5,
-                color: "info.main",
-                backgroundColor: "rgba(59, 130, 246, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(59, 130, 246, 0.2)",
-                  transform: "scale(1.1)",
-                },
-                transition: "all 0.2s ease",
-              }}
-            >
-              <HistoryIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
-          {/* Add Follow Up */}
-          <Tooltip title="Add Follow Up">
-            <IconButton
-              size="small"
-              onClick={() => handleOpenAddFollowUpModal(row)}
-              sx={{
-                background: "rgba(16, 185, 129, 0.1)",
-                color: "#10b981",
-                "&:hover": {
-                  background: "rgba(16, 185, 129, 0.2)",
-                  transform: "scale(1.1)",
-                },
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            >
-              <AddIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
-          {/* View Details */}
-          <Tooltip title="View lead details">
-            <IconButton
-              size="small"
-              onClick={() => handleOpenDetailsModal(row)}
-              sx={{
-                background: "rgba(59, 130, 246, 0.1)",
-                color: "#3b82f6",
-                "&:hover": {
-                  background: "rgba(59, 130, 246, 0.2)",
-                  transform: "scale(1.1)",
-                },
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      ),
-    },
-  ];
+  const columns = buildColumns({
+    handleCallLog,
+    handleOpenCallHistory,
+    handleOpenAddFollowUpModal,
+    handleOpenDetailsModal,
+  });
 
   if (error) {
     return (
@@ -950,7 +452,7 @@ const LeadsTable = () => {
                 Leads
               </Typography>
               <Typography variant="body2" sx={{ color: "#64748b" }}>
-                Manage your leads and customer information
+                Manage your leads
               </Typography>
             </Box>
 
@@ -1012,7 +514,28 @@ const LeadsTable = () => {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  New Lead
+                  Upload Leads
+                </Button>
+              )}
+
+              {canCreate("lead") && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setCreateLeadModalOpen(true)}
+                  sx={{
+                    backgroundColor: "success.main",
+                    "&:hover": {
+                      backgroundColor: "success.dark",
+                    },
+                    minWidth: "auto",
+                    px: 2,
+                    py: 1,
+                    height: "40px", // Match TextField height
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Create Lead
                 </Button>
               )}
             </Box>
@@ -1020,137 +543,18 @@ const LeadsTable = () => {
             {/* Filter Button */}
           </Box>
 
-          {/* Filter Summary */}
-          {hasActiveFilters && (
-            <Box
-              sx={{
-                mb: 2,
-                p: 1.5,
-                background: "rgba(59, 130, 246, 0.05)",
-                border: "1px solid rgba(59, 130, 246, 0.2)",
-                borderRadius: 2,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  color="primary"
-                  sx={{ fontWeight: 500 }}
-                >
-                  Active Filters:
-                </Typography>
-
-                {assignmentFilter !== "all" && (
-                  <Chip
-                    label={`Assignment: ${
-                      assignmentFilter === "assigned"
-                        ? "Assigned"
-                        : "Unassigned"
-                    }`}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    onDelete={() => handleAssignmentFilterChange("all")}
-                  />
-                )}
-
-                {statusFilter !== "all" && (
-                  <Chip
-                    label={`Status: ${
-                      statusFilter.charAt(0).toUpperCase() +
-                      statusFilter.slice(1)
-                    }`}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    onDelete={() => handleStatusFilterChange("all")}
-                  />
-                )}
-              </Box>
-
-              <Button
-                size="small"
-                variant="text"
-                onClick={handleClearFilters}
-                startIcon={<ClearIcon />}
-                sx={{ color: "primary.main" }}
-              >
-                Clear All
-              </Button>
-            </Box>
-          )}
-
-          {/* Quick Filter Buttons */}
-          <Box
-            sx={{
-              mb: 2,
-              display: "flex",
-              gap: 1,
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-              Quick Filters:
-            </Typography>
-
-            <Button
-              size="small"
-              variant={
-                assignmentFilter === "unassigned" ? "contained" : "outlined"
-              }
-              onClick={() => handleAssignmentFilterChange("unassigned")}
-              sx={{ minWidth: "auto" }}
-            >
-              Unassigned
-            </Button>
-
-            <Button
-              size="small"
-              variant={
-                assignmentFilter === "assigned" ? "contained" : "outlined"
-              }
-              onClick={() => handleAssignmentFilterChange("assigned")}
-              sx={{ minWidth: "auto" }}
-            >
-              Assigned
-            </Button>
-
-            <Button
-              size="small"
-              variant={statusFilter === "new" ? "contained" : "outlined"}
-              onClick={() => handleStatusFilterChange("new")}
-              sx={{ minWidth: "auto" }}
-            >
-              New Leads
-            </Button>
-
-            {/* Filtered Export Button */}
-            {hasActiveFilters && (
-              <Button
-                size="small"
-                variant="outlined"
-                color="success"
-                startIcon={<DownloadIcon />}
-                onClick={handleFilteredExport}
-                sx={{ minWidth: "auto" }}
-              >
-                Export Filtered
-              </Button>
-            )}
-          </Box>
+          {/* Lead Filters Component */}
+          <LeadFilters
+            assignmentFilter={assignmentFilter}
+            statusFilter={statusFilter}
+            userFilter={userFilter}
+            onAssignmentFilterChange={handleAssignmentFilterChange}
+            onStatusFilterChange={handleStatusFilterChange}
+            onUserFilterChange={handleUserFilterChange}
+            onClearFilters={handleClearFilters}
+            onFilteredExport={handleFilteredExport}
+            hasActiveFilters={hasActiveFilters}
+          />
 
           {/* Bulk Actions Bar */}
           {canUseCsvMulti && selectedRows.length > 0 && (
@@ -1304,7 +708,7 @@ const LeadsTable = () => {
                           statusFilter.slice(1)
                         } status`
                       : ""
-                  }`
+                  } ${userFilter ? "• User filtered" : ""}`
                 : `${totalItems} total leads`
             }
             columns={columns}
@@ -1384,6 +788,12 @@ const LeadsTable = () => {
 
           {/* New Lead Modal */}
           <NewLeadModal open={newLeadModalOpen} setOpen={setNewLeadModalOpen} />
+
+          {/* Create Lead Modal */}
+          <CreateLeadModal
+            open={createLeadModalOpen}
+            setOpen={setCreateLeadModalOpen}
+          />
 
           {/* Lead Details Modal */}
           <LeadDetailsModal

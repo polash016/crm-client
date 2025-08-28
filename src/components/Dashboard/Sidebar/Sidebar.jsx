@@ -35,7 +35,10 @@ const Sidebar = () => {
   const permissionsArray = Array.isArray(permissions) ? permissions : [];
 
   // Safely extract user name and role
-  const userName = typeof userData?.name === "string" ? userData.name : "User";
+  const userName =
+    typeof userData?.profile?.firstName === "string"
+      ? userData.profile.firstName + " " + userData.profile.lastName
+      : "User";
   const userRole =
     typeof userData?.userType === "string" ? userData.userType : "Employee";
 

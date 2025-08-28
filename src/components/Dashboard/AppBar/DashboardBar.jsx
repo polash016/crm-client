@@ -37,6 +37,8 @@ const DashboardBar = ({ onMenuClick }) => {
     handleClose();
   };
 
+  const userData = profileData?.data;
+
   const open = Boolean(anchorEl);
 
   return (
@@ -92,8 +94,7 @@ const DashboardBar = ({ onMenuClick }) => {
             }}
           >
             Welcome back,{" "}
-            {profileData?.data?.name?.split(" ")[0] ||
-              user?.name?.split(" ")[0] ||
+            {userData?.profile?.firstName + " " + userData?.profile?.lastName ||
               "User"}
           </Typography>
           <Typography
@@ -133,26 +134,33 @@ const DashboardBar = ({ onMenuClick }) => {
             sx={{
               ml: 1,
               background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-              border: "2px solid rgba(255, 255, 255, 0.1)",
+              border: "0px solid #60a5fa",
               "&:hover": {
                 background: "linear-gradient(135deg, #2563eb 0%, #1e40af 100%)",
+                borderColor: "#93c5fd",
                 transform: "scale(1.05)",
               },
               transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
             <Avatar
+              src={userData?.profile?.profileImg}
               sx={{
-                width: 32,
-                height: 32,
+                width: 40,
+                height: 40,
                 fontSize: "0.9rem",
                 fontWeight: 600,
-                background: "transparent",
+                background: userData?.profile?.profileImg
+                  ? "transparent"
+                  : "primary.main",
+              }}
+              onError={(e) => {
+                // Hide the broken image and show fallback letter
+                e.target.style.display = "none";
               }}
             >
-              {profileData?.data?.name?.charAt(0)?.toUpperCase() ||
-                user?.name?.charAt(0)?.toUpperCase() ||
-                "U"}
+              {!userData?.profile?.profileImg &&
+                (userData?.profile?.firstName?.charAt(0)?.toUpperCase() || "U")}
             </Avatar>
           </IconButton>
         </Box>
@@ -197,7 +205,9 @@ const DashboardBar = ({ onMenuClick }) => {
                 fontSize: "0.9rem",
               }}
             >
-              {profileData?.data?.name || user?.name || "User"}
+              {userData?.profile?.firstName +
+                " " +
+                userData?.profile?.lastName || "User"}
             </Typography>
             <Typography
               variant="caption"

@@ -107,7 +107,7 @@ const DSPagination = ({
               },
             }}
           >
-            {[30, 50, 100, 130, 150, 200].map((number) => (
+            {[5, 30, 50, 100, 130, 150, 200].map((number) => (
               <MenuItem
                 key={number}
                 value={number}
