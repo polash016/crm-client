@@ -62,6 +62,13 @@ axiosInstance.interceptors.response.use(
         config.headers["Authorization"] = accessToken;
         return axiosInstance(config); // Retry the original request
       } catch (refreshError) {
+        // if (refreshError?.isNetworkError) {
+        //   return Promise.reject(refreshError);
+        // }
+        // saveToLocalStorage(authKey, "");
+        // if (typeof window !== "undefined") {
+        //   window.location.href = "/";
+        // }
         return Promise.reject(refreshError);
       }
     } else {

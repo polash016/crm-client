@@ -1,45 +1,56 @@
 "use client";
 import React from "react";
-import { Box, Button, Grid, Typography } from "@mui/material";
+import { Box, Button, Grid, Typography, FormHelperText } from "@mui/material";
 import { toast } from "sonner";
 import DSModal from "@/components/Shared/DSModal/DSModal";
 import DSForm from "@/components/Forms/DSForm";
 import DSInput from "@/components/Forms/DSInput";
 import { useCreateLeadMutation } from "@/redux/api/leadsApi";
 import DSKeywordsInput from "@/components/Forms/DSKeywordsInput";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+
+const createLeadSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().min(1, "Phone is required"),
+  address: z.string().min(1, "Address is required"),
+  items: z.array(z.string()).min(1, "Items are required"),
+  price: z.string().min(1, "Price is required"),
+  followUpDate: z.string().optional(),
+  source: z.string().optional(),
+});
 
 const CreateLeadModal = ({ open, setOpen }) => {
   const [createLead, { isLoading }] = useCreateLeadMutation();
 
   const handleSubmit = async (data) => {
     try {
-      // Split the name into firstName and lastName
-      const nameParts = data.name.trim().split(" ");
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
-
       // Create the lead data object
       const leadData = {
-        firstName,
-        lastName,
+        name: data.name,
         phone: data.phone,
-        description: data.address, // Using description for address
-        notes: `Items: ${data.items}\nPrice: ${data.price}`, // Combining items and price in notes
+        address: data.address,
+        items: data.items,
+        price: Number(data.price),
+        nextFollowUpAt: data.followUpDate,
+        source: data.source,
       };
 
-      // If there's a follow-up date, we could handle it here
-      // For now, we'll just log it or store it in notes
-      if (data.followUpDate) {
-        leadData.notes += `\nFollow-up Date: ${data.followUpDate}`;
-      }
+      console.log("Lead data:", leadData);
 
-      //   const result = await createLead(leadData).unwrap();
+      const res = createLead(leadData).unwrap();
 
-      //   toast.success("Lead created successfully!");
-      //   setOpen(false);
-
-      // Optional: Reset form or perform additional actions
-      //   console.log("Created lead:", result);
+      toast.promise(res, {
+        loading: "Creating...",
+        success: (res) => {
+          if (res?.data?.id) {
+            setOpen(false);
+            return res?.message || "Lead created successfully";
+          }
+          return res?.message || "Lead created";
+        },
+        error: (error) => error?.message || "Something went wrong",
+      });
     } catch (error) {
       console.error("Error creating lead:", error);
       toast.error(error?.data?.message || "Failed to create lead");
@@ -50,9 +61,10 @@ const CreateLeadModal = ({ open, setOpen }) => {
     name: "",
     address: "",
     phone: "",
-    items: "",
+    items: [],
     price: "",
     followUpDate: "",
+    source: "",
   };
 
   return (
@@ -64,79 +76,155 @@ const CreateLeadModal = ({ open, setOpen }) => {
       fullWidth
     >
       <Box sx={{ p: 2 }}>
-        <DSForm onSubmit={handleSubmit} defaultValues={defaultValues}>
+        <DSForm
+          onSubmit={handleSubmit}
+          resolver={zodResolver(createLeadSchema)}
+          defaultValues={defaultValues}
+        >
           <Grid container spacing={3}>
             {/* Name Field */}
             <Grid item xs={12} md={6}>
-              <DSInput
-                name="name"
-                // label="Full Name"
-                placeholder="Enter full name"
-                fullWidth
-                sx={{ mt: 2 }}
-              />
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontWeight: 500,
+                  color: "text.primary",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Full Name *
+              </Typography>
+              <DSInput name="name" placeholder="Enter full name" fullWidth />
             </Grid>
 
             {/* Phone Number Field */}
             <Grid item xs={12} md={6}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontWeight: 500,
+                  color: "text.primary",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Phone Number
+              </Typography>
               <DSInput
                 name="phone"
-                label="Phone Number"
                 placeholder="Enter phone number"
                 fullWidth
-                sx={{ mt: 2 }}
               />
             </Grid>
 
             {/* Address Field */}
             <Grid item xs={12}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontWeight: 500,
+                  color: "text.primary",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Address
+              </Typography>
               <DSInput
                 name="address"
-                // label="Address"
-                placeholder="Enter address"
+                placeholder="Enter complete address"
                 fullWidth
-                multiline
+                // multiline
                 rows={3}
-                sx={{ mt: 2 }}
               />
             </Grid>
 
             {/* Items Field */}
             <Grid item xs={12} md={6}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontWeight: 500,
+                  color: "text.primary",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Items/Services
+              </Typography>
               <DSKeywordsInput
                 name="items"
-                // label="Items"
-                placeholder="Enter items"
+                placeholder="Enter items or services (press Enter to add)"
                 fullWidth
                 multiline
                 rows={2}
-                sx={{ mt: 2 }}
               />
             </Grid>
 
             {/* Price Field */}
             <Grid item xs={12} md={6}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontWeight: 500,
+                  color: "text.primary",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Price (₹)
+              </Typography>
               <DSInput
                 name="price"
-                // label="Price"
-                placeholder="Enter price"
+                placeholder="Enter total price"
                 type="number"
                 fullWidth
-                sx={{ mt: 2 }}
               />
             </Grid>
 
             {/* Follow-up Date Field */}
             <Grid item xs={12} md={6}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontWeight: 500,
+                  color: "text.primary",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Follow-up Date
+              </Typography>
               <DSInput
                 name="followUpDate"
-                // label="Follow-up Date"
                 type="date"
                 fullWidth
-                sx={{ mt: 2 }}
                 InputLabelProps={{
                   shrink: true,
                 }}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 1,
+                  fontWeight: 500,
+                  color: "text.primary",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Source
+              </Typography>
+              <DSInput
+                name="source"
+                type="text"
+                fullWidth
+                // InputLabelProps={{
+                //   shrink: true,
+                // }}
               />
             </Grid>
           </Grid>

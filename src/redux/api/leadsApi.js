@@ -30,7 +30,7 @@ const leadsApi = baseApi.injectEndpoints({
 
     createLead: build.mutation({
       query: (data) => ({
-        url: "/leads",
+        url: "/leads/create-lead",
         method: "POST",
         data,
       }),

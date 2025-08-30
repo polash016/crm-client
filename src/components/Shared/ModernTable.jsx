@@ -211,7 +211,7 @@ const ModernTable = ({
       {(title || subtitle) && (
         <Box
           sx={{
-            p: { xs: 2, sm: 3 },
+            p: 3,
             borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
             background: "rgba(59, 130, 246, 0.02)",
           }}
@@ -222,7 +222,6 @@ const ModernTable = ({
               sx={{
                 fontWeight: 600,
                 color: "#1e293b",
-                fontSize: { xs: "1rem", sm: "1.125rem" },
                 mb: subtitle ? 0.5 : 0,
               }}
             >
@@ -234,7 +233,6 @@ const ModernTable = ({
               variant="body2"
               sx={{
                 color: "#64748b",
-                fontSize: { xs: "0.8rem", sm: "0.875rem" },
               }}
             >
               {subtitle}
@@ -257,22 +255,33 @@ const ModernTable = ({
       {/* Table Content */}
       <Box
         sx={{
-          overflow: "auto",
+          overflowX: "auto",
+          overflowY: "visible",
           width: "100%",
           maxWidth: "100%",
-          "& .MuiTableContainer-root": {
-            maxWidth: "100%",
+          WebkitOverflowScrolling: "touch",
+          "&::-webkit-scrollbar": {
+            height: "6px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "rgba(148, 163, 184, 0.3)",
+            borderRadius: "3px",
+            "&:hover": {
+              background: "rgba(148, 163, 184, 0.5)",
+            },
           },
         }}
       >
         <TableContainer
           sx={{
-            minWidth: { xs: 600, sm: "auto" },
+            width: "100%",
             maxWidth: "100%",
-            mx: 0,
           }}
         >
-          <Table>
+          <Table sx={{ minWidth: { xs: "100%", sm: 600 } }}>
             <TableHead>
               <TableRow
                 sx={{
@@ -288,7 +297,9 @@ const ModernTable = ({
                     letterSpacing: "0.5px",
                     py: { xs: 1.5, sm: 2 },
                     px: { xs: 1, sm: 2 },
-                    whiteSpace: "nowrap",
+                    whiteSpace: { xs: "normal", sm: "nowrap" },
+                    wordBreak: { xs: "break-word", sm: "normal" },
+                    minWidth: { xs: "80px", sm: "auto" },
                   },
                 }}
               >
@@ -325,7 +336,10 @@ const ModernTable = ({
                 {showActions && (
                   <TableCell
                     align="center"
-                    sx={{ width: { xs: 120, sm: 140 } }}
+                    sx={{
+                      width: { xs: 100, sm: 140 },
+                      minWidth: { xs: 100, sm: 140 },
+                    }}
                   >
                     Actions
                   </TableCell>
@@ -343,9 +357,10 @@ const ModernTable = ({
                     }
                     sx={{
                       textAlign: "center",
-                      py: 6,
+                      py: { xs: 4, sm: 6 },
                       color: "#64748b",
-                      fontSize: "0.875rem",
+                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                      px: { xs: 2, sm: 0 },
                     }}
                   >
                     {emptyMessage}
@@ -379,9 +394,10 @@ const ModernTable = ({
                         borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
                         py: { xs: 1.5, sm: 2 },
                         px: { xs: 1, sm: 2 },
-                        fontSize: { xs: "0.8rem", sm: "0.875rem" },
                         color: "#334155",
-                        whiteSpace: "nowrap",
+                        whiteSpace: { xs: "normal", sm: "nowrap" },
+                        wordBreak: { xs: "break-word", sm: "normal" },
+                        minWidth: { xs: "80px", sm: "auto" },
                       },
                     }}
                   >

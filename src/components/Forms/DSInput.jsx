@@ -45,19 +45,19 @@ const DSInput = ({
           {...field}
           sx={{
             ...sx,
-            position: 'relative',
+            position: "relative",
             "& .MuiOutlinedInput-root": {
               fontSize: "0.95rem",
               fontWeight: 500,
-              position: 'relative',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(8px)',
-              borderRadius: '12px',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: "relative",
+              // backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              backdropFilter: "blur(8px)",
+              borderRadius: "12px",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: "rgba(148, 163, 184, 0.3)",
                 borderWidth: "1px",
-                borderRadius: '12px',
+                borderRadius: "12px",
               },
               "&:hover .MuiOutlinedInput-notchedOutline": {
                 borderColor: "#8b5cf6",

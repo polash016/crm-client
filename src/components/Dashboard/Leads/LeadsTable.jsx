@@ -28,7 +28,7 @@ import {
 import { useDebounced } from "@/redux/hooks";
 import ModernTable from "@/components/Shared/ModernTable";
 import { getRowStyling } from "./LeadTable/utils";
-import { buildColumns } from "./LeadTable/columns";
+import { useColumns } from "./LeadTable/columns";
 import ResponsiveContainer from "@/components/Shared/ResponsiveContainer";
 import DSPagination from "@/components/Dashboard/pagination/DSPagination";
 import CallHistory from "@/components/Shared/CallHistory";
@@ -408,7 +408,7 @@ const LeadsTable = () => {
     setCreateLeadModalOpen(true);
   };
 
-  const columns = buildColumns({
+  const columns = useColumns({
     handleCallLog,
     handleOpenCallHistory,
     handleOpenAddFollowUpModal,
@@ -438,38 +438,73 @@ const LeadsTable = () => {
             sx={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: { xs: "stretch", md: "center" },
-              flexDirection: { xs: "column", md: "row" },
-              gap: 2,
-              mb: 3,
+              alignItems: { xs: "flex-start", sm: "center", md: "center" },
+              flexDirection: { xs: "column", sm: "column", md: "row" },
+              gap: { xs: 3, sm: 2, md: 2 },
+              mb: { xs: 3, sm: 3, md: 3 },
             }}
           >
-            <Box>
+            <Box
+              sx={{
+                textAlign: { xs: "center", sm: "left", md: "left" },
+                mb: { xs: 1, sm: 0, md: 0 },
+                width: { xs: "100%", sm: "auto", md: "auto" },
+              }}
+            >
               <Typography
                 variant="h5"
-                sx={{ fontWeight: 600, color: "#1e293b", mb: 0.5 }}
+                sx={{
+                  fontWeight: 600,
+                  color: "#1e293b",
+                  mb: 0.5,
+                  fontSize: { xs: "1.5rem", sm: "1.25rem", md: "1.5rem" },
+                }}
               >
                 Leads
               </Typography>
-              <Typography variant="body2" sx={{ color: "#64748b" }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#64748b",
+                  fontSize: { xs: "0.9rem", sm: "0.875rem", md: "0.875rem" },
+                }}
+              >
                 Manage your leads
               </Typography>
             </Box>
 
             {/* Summary Statistics for Employees */}
-            {rows.length > 0 && <SummaryStats rows={rows} />}
+            {rows.length > 0 && (
+              <Box
+                sx={{
+                  width: { xs: "100%", sm: "100%", md: "auto" },
+                  order: { xs: -1, sm: -1, md: 0 },
+                  mb: { xs: 2, sm: 1, md: 0 },
+                  textAlign: { xs: "center", sm: "left", md: "left" },
+                }}
+              >
+                <SummaryStats rows={rows} />
+              </Box>
+            )}
 
             {/* Search and New Lead Container */}
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
-                gap: 2,
-                minWidth: { xs: "100%", md: "auto" },
+                flexDirection: { xs: "column", sm: "column", md: "row" },
+                alignItems: { xs: "stretch", sm: "stretch", md: "center" },
+                gap: { xs: 2, sm: 2, md: 2 },
+                width: { xs: "100%", sm: "100%", md: "auto" },
               }}
             >
               {/* Search Field */}
-              <Box sx={{ minWidth: { xs: "100%", md: "300px" } }}>
+              <Box
+                sx={{
+                  width: { xs: "100%", sm: "100%", md: "auto" },
+                  minWidth: { xs: "100%", sm: "100%", md: "300px" },
+                  maxWidth: { xs: "100%", sm: "100%", md: "400px" },
+                }}
+              >
                 <TextField
                   size="small"
                   placeholder="Search leads by name, phone, address..."
@@ -496,65 +531,123 @@ const LeadsTable = () => {
                 />
               </Box>
 
-              {/* New Lead Button */}
-              {canCreate("csv") && (
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleOpenNewLeadModal}
-                  sx={{
-                    backgroundColor: "success.main",
-                    "&:hover": {
-                      backgroundColor: "success.dark",
-                    },
-                    minWidth: "auto",
-                    px: 2,
-                    py: 1,
-                    height: "40px", // Match TextField height
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Upload Leads
-                </Button>
-              )}
+              {/* Action Buttons */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row", md: "row" },
+                  gap: { xs: 1.5, sm: 2, md: 2 },
+                  width: { xs: "100%", sm: "100%", md: "auto" },
+                  "& > *": {
+                    flex: { xs: 1, sm: "none", md: "none" },
+                  },
+                }}
+              >
+                {canCreate("csv") && (
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleOpenNewLeadModal}
+                    sx={{
+                      backgroundColor: "success.main",
+                      "&:hover": {
+                        backgroundColor: "success.dark",
+                      },
+                      minWidth: "auto",
+                      px: { xs: 3, sm: 2, md: 2 },
+                      py: 1.5,
+                      height: { xs: "48px", sm: "40px", md: "40px" },
+                      whiteSpace: "nowrap",
+                      fontSize: {
+                        xs: "0.9rem",
+                        sm: "0.875rem",
+                        md: "0.875rem",
+                      },
+                      width: { xs: "100%", sm: "auto", md: "auto" },
+                      justifyContent: {
+                        xs: "center",
+                        sm: "flex-start",
+                        md: "flex-start",
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: { xs: "none", sm: "inline", md: "inline" },
+                      }}
+                    >
+                      Upload Leads
+                    </Box>
+                    <Box
+                      sx={{ display: { xs: "inline", sm: "none", md: "none" } }}
+                    >
+                      Upload
+                    </Box>
+                  </Button>
+                )}
 
-              {canCreate("lead") && (
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setCreateLeadModalOpen(true)}
-                  sx={{
-                    backgroundColor: "success.main",
-                    "&:hover": {
-                      backgroundColor: "success.dark",
-                    },
-                    minWidth: "auto",
-                    px: 2,
-                    py: 1,
-                    height: "40px", // Match TextField height
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Create Lead
-                </Button>
-              )}
+                {canCreate("lead") && (
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setCreateLeadModalOpen(true)}
+                    sx={{
+                      backgroundColor: "success.main",
+                      "&:hover": {
+                        backgroundColor: "success.dark",
+                      },
+                      minWidth: "auto",
+                      px: { xs: 3, sm: 2, md: 2 },
+                      py: 1.5,
+                      height: { xs: "48px", sm: "40px", md: "40px" },
+                      whiteSpace: "nowrap",
+                      fontSize: {
+                        xs: "0.9rem",
+                        sm: "0.875rem",
+                        md: "0.875rem",
+                      },
+                      width: { xs: "100%", sm: "auto", md: "auto" },
+                      justifyContent: {
+                        xs: "center",
+                        sm: "flex-start",
+                        md: "flex-start",
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: { xs: "none", sm: "inline", md: "inline" },
+                      }}
+                    >
+                      Create Lead
+                    </Box>
+                    <Box
+                      sx={{ display: { xs: "inline", sm: "none", md: "none" } }}
+                    >
+                      Create
+                    </Box>
+                  </Button>
+                )}
+              </Box>
             </Box>
 
             {/* Filter Button */}
           </Box>
 
           {/* Lead Filters Component */}
-          <LeadFilters
-            assignmentFilter={assignmentFilter}
-            statusFilter={statusFilter}
-            userFilter={userFilter}
-            onAssignmentFilterChange={handleAssignmentFilterChange}
-            onStatusFilterChange={handleStatusFilterChange}
-            onUserFilterChange={handleUserFilterChange}
-            onClearFilters={handleClearFilters}
-            onFilteredExport={handleFilteredExport}
-            hasActiveFilters={hasActiveFilters}
-          />
+          {canCreate("csv") && (
+            <LeadFilters
+              assignmentFilter={assignmentFilter}
+              statusFilter={statusFilter}
+              userFilter={userFilter}
+              onAssignmentFilterChange={handleAssignmentFilterChange}
+              onStatusFilterChange={handleStatusFilterChange}
+              onUserFilterChange={handleUserFilterChange}
+              onClearFilters={handleClearFilters}
+              onFilteredExport={handleFilteredExport}
+              hasActiveFilters={hasActiveFilters}
+            />
+          )}
 
           {/* Bulk Actions Bar */}
           {canUseCsvMulti && selectedRows.length > 0 && (

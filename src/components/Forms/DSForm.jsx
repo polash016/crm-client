@@ -1,14 +1,22 @@
 "use client";
 import { FormProvider, useForm } from "react-hook-form";
 
-const DSForm = ({ children, onSubmit, resolver, defaultValues }) => {
-  const methods = useForm({
+const DSForm = ({
+  children,
+  onSubmit,
+  resolver,
+  defaultValues,
+  methods: externalMethods,
+}) => {
+  const internalMethods = useForm({
     resolver,
     defaultValues,
     mode: "all",
     reValidateMode: "onChange",
     criteriaMode: "all",
   });
+
+  const methods = externalMethods || internalMethods;
 
   const {
     handleSubmit,
